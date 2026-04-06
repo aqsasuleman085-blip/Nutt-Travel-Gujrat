@@ -5,13 +5,13 @@ class BusesScreen extends StatelessWidget {
 
   final List<Map<String, String>> buses = const [
     {
-      "name": "Daewoo Express",
+      "name": "Nutt Coach",
       "time": "10:00 AM - 2:00 PM",
       "price": "1500",
       "seats": "12"
     },
     {
-      "name": "Faisal Movers",
+      "name": "Nutt Coach",
       "time": "1:00 PM - 5:00 PM",
       "price": "1800",
       "seats": "8"

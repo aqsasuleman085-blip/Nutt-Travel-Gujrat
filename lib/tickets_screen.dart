@@ -4,17 +4,16 @@ class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
 
   @override
- State<TicketsScreen> createState() => _TicketsScreenState();
+  State<TicketsScreen> createState() => _TicketsScreenState();
 }
 
 class _TicketsScreenState extends State<TicketsScreen> {
-
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past, 2 = Cancel
+  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
 
   // Your custom data (edit freely)
   final List<Map<String, String>> upcomingTickets = [
     {
-      "bus": "My Coach Service",
+      "bus": "Nutt Coach Service",
       "route": "Gujrat → Lahore",
       "date": "26 Apr 2026",
       "time": "10:00 AM",
@@ -34,9 +33,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     },
   ];
 
-  final List<Map<String, String>> cancelledTickets = [];
-
-  Widget buildTicketCard(Map<String, String> ticket, bool isUpcoming) {
+  Widget buildTicketCard(Map<String, String> ticket) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
@@ -46,7 +43,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Text(
               ticket["bus"]!,
               style: const TextStyle(
@@ -54,16 +50,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent),
             ),
-
             const SizedBox(height: 6),
-
             Text(
               ticket["route"]!,
               style: const TextStyle(fontSize: 15),
             ),
-
             const SizedBox(height: 8),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -71,9 +63,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 Text("Time: ${ticket["time"]}"),
               ],
             ),
-
             const SizedBox(height: 5),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -81,9 +71,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 Text("ID: ${ticket["id"]}"),
               ],
             ),
-
             const SizedBox(height: 12),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -91,22 +79,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   onPressed: () {},
                   child: const Text("View"),
                 ),
-
-                const SizedBox(width: 10),
-
-                if (isUpcoming)
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        cancelledTickets.add(ticket);
-                        upcomingTickets.remove(ticket);
-                      });
-                    },
-                    child: const Text("Cancel"),
-                  ),
               ],
             )
           ],
@@ -115,7 +87,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  Widget buildList(List<Map<String, String>> tickets, bool isUpcoming) {
+  Widget buildList(List<Map<String, String>> tickets) {
     if (tickets.isEmpty) {
       return const Center(child: Text("No tickets available"));
     }
@@ -123,18 +95,16 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return ListView.builder(
       itemCount: tickets.length,
       itemBuilder: (context, index) {
-        return buildTicketCard(tickets[index], isUpcoming);
+        return buildTicketCard(tickets[index]);
       },
     );
   }
 
   Widget getCurrentScreen() {
     if (selectedIndex == 0) {
-      return buildList(upcomingTickets, true);
-    } else if (selectedIndex == 1) {
-      return buildList(pastTickets, false);
+      return buildList(upcomingTickets);
     } else {
-      return buildList(cancelledTickets, false);
+      return buildList(pastTickets);
     }
   }
 
@@ -146,7 +116,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
         children: [
           buildButton("Upcoming", 0),
           buildButton("Past Tickets", 1),
-          buildButton("Cancelled", 2),
         ],
       ),
     );
@@ -188,7 +157,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
         ),
         centerTitle: true,
       ),
-
       body: Column(
         children: [
           buildTopButtons(),
