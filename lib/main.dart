@@ -1,118 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/buses_screen.dart';
 import 'package:nutt/login.dart';
+import 'package:nutt/profile_screen.dart';
 import 'package:nutt/signup.dart';
 import 'package:nutt/home_screen.dart';
 
 void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: HomePage(),
-  ));
+  runApp(const MyApp());
 }
 
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+
+      // 🔹 ROUTES (All Screens Registered)
+      routes: {
+        '/home': (context) => HomeScreen(),
+        '/buses': (context) => BusesScreen(),
+        '/profile': (context) => ProfileScreen(),
+      },
+
+      home: HomePage(),
+    );
+  }
+}
+
+// 🔹 WELCOME SCREEN
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Container(
-          // we will give media query height
-          // double.infinity make it big as my parent allows
-          // while MediaQuery make it big as per the screen
-
-          width: double.infinity,
-          height: MediaQuery.of(context).size.height,
-          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 50),
+        child: Padding(
+          padding: const EdgeInsets.all(30),
           child: Column(
-            // even space distribution
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
+            children: [
+              // 🔹 Top Text
               Column(
-                children: <Widget>[
+                children: const [
                   Text(
                     "Welcome",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-
-                    ),
-                    
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Text("BackSlash Flutter provides extraordinary flutter tutorials. Do Subscribe! ",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 15,
-
-                  ),)
+                  SizedBox(height: 10),
+                  Text("Bus Ticket Booking App", textAlign: TextAlign.center),
                 ],
               ),
-              Container(
-                height: MediaQuery.of(context).size.height / 3,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage("assets/welcome.png")
-                  )
-                ),
-              ),
 
+              // 🔹 Image
+              Image.asset("assets/welcome.png", height: 200),
+
+              // 🔹 Buttons
               Column(
-                children: <Widget>[
-                  // the login button
+                children: [
                   MaterialButton(
                     minWidth: double.infinity,
                     height: 60,
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
-
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginPage()),
+                      );
                     },
-                    // defining the shape
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                        color: Colors.black
-                      ),
-                      borderRadius: BorderRadius.circular(50)
+                      borderRadius: BorderRadius.circular(50),
+                      side: const BorderSide(color: Colors.black),
                     ),
-                    child: Text(
-                      "Login",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18
-                      ),
-                    ),
+                    child: const Text("Login"),
                   ),
-                  // creating the signup button
-                  SizedBox(height:20),
+
+                  const SizedBox(height: 20),
+
                   MaterialButton(
                     minWidth: double.infinity,
                     height: 60,
-                    onPressed: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=> SignupPage()));
-
+                    color: Colors.blue,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SignupPage()),
+                      );
                     },
-                    color: Color(0xff0095FF),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(50)
+                      borderRadius: BorderRadius.circular(50),
                     ),
-                    child: Text(
-                      "Sign up",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18
-                      ),
+                    child: const Text(
+                      "Sign Up",
+                      style: TextStyle(color: Colors.white),
                     ),
-                  )
-
+                  ),
                 ],
-              )
-
-
-
+              ),
             ],
           ),
         ),

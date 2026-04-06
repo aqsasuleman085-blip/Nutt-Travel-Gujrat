@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:nutt/buses_screen.dart';
+import 'package:nutt/profile_screen.dart';
+import 'package:nutt/tickets_screen.dart'; // ✅ Added
 // 🔹 MAIN HOME SCREEN
 class HomeScreen extends StatefulWidget {
   @override
@@ -8,20 +10,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  String fromCity = "Select City";
-  String toCity = "Select Destination";
-  String date = "Select Date";
-
-  List<String> cities = [
-    "Lahore",
-    "Karachi",
-    "Islamabad",
-    "Multan",
-    "Gujrat",
-    "Sialkot",
-    "Abbottabad",
-  ];
-
   int _currentIndex = 0;
 
   late AnimationController _controller;
@@ -29,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   final List<Widget> _pages = [
     HomeTab(),
-    TicketsScreen(),
+    TicketsScreen(), // ✅ Connected
     BusesScreen(),
     ProfileScreen(),
   ];
@@ -65,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen>
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.confirmation_number), label: "Tickets"),
@@ -84,7 +72,8 @@ class HomeTab extends StatefulWidget {
   _HomeTabState createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
+class _HomeTabState extends State<HomeTab>
+    with SingleTickerProviderStateMixin {
   String fromCity = "Select City";
   String toCity = "Select Destination";
   String date = "Select Date";
@@ -169,7 +158,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFE3F2FD), Color(0xFFF5F7FA)],
           begin: Alignment.topCenter,
@@ -180,9 +169,10 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // 🔹 Header with notification
+              // 🔹 Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -201,22 +191,21 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       ],
                     ),
                     IconButton(
-                      icon: Icon(Icons.notifications_none,
-                          color: Colors.black, size: 28),
+                      icon: const Icon(Icons.notifications_none, size: 28),
                       onPressed: () {},
                     ),
                   ],
                 ),
               ),
 
-              // 🔹 Animated Banner
+              // 🔹 Banner
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: AnimatedBuilder(
                   animation: _animation,
                   builder: (context, child) {
                     return Container(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.blueAccent,
                         borderRadius: BorderRadius.circular(20),
@@ -226,11 +215,11 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         children: [
                           Transform.translate(
                             offset: Offset(_animation.value, 0),
-                            child: Icon(Icons.directions_bus,
+                            child: const Icon(Icons.directions_bus,
                                 color: Colors.white, size: 30),
                           ),
-                          SizedBox(width: 10),
-                          Text("Book Your Bus Now!",
+                          const SizedBox(width: 10),
+                          const Text("Book Your Bus Now!",
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -242,39 +231,43 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // 🔹 Booking Card
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
-                padding: EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 10)
+                  ],
                 ),
                 child: Column(
                   children: [
                     GestureDetector(
                         onTap: () => selectCity(true),
                         child: buildField("From", fromCity)),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     GestureDetector(
-                        onTap: swapCities,
-                        child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.blue,
-                            child: Icon(Icons.swap_vert,
-                                color: Colors.white))),
-                    SizedBox(height: 10),
+                      onTap: swapCities,
+                      child: const CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.blue,
+                        child:
+                            Icon(Icons.swap_vert, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     GestureDetector(
                         onTap: () => selectCity(false),
                         child: buildField("To", toCity)),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     GestureDetector(
                         onTap: selectDate,
                         child: buildField("Date", date)),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -283,27 +276,29 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                               toCity == "Select Destination" ||
                               date == "Select Date") {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text("Please fill all fields")));
+                                const SnackBar(
+                                    content:
+                                        Text("Please fill all fields")));
                             return;
                           }
-                          Navigator.pushNamed(context, '/buses');
                         },
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 18),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 18),
                           backgroundColor: Colors.blue,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15)),
+                              borderRadius:
+                                  BorderRadius.circular(15)),
                         ),
-                        child: Text("Find Schedules",
-                            style:
-                                TextStyle(fontSize: 18, color: Colors.white)),
+                        child: const Text("Find Schedules",
+                            style: TextStyle(
+                                fontSize: 18, color: Colors.white)),
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 20)
+              const SizedBox(height: 20)
             ],
           ),
         ),
@@ -313,9 +308,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   Widget buildField(String title, String value) {
     return Container(
-      padding: EdgeInsets.all(15),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Color(0xFFF1F3F6),
+        color: const Color(0xFFF1F3F6),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -323,33 +318,13 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           Text("$title: ", style: TextStyle(color: Colors.grey[600])),
           Expanded(
             child: Text(value,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16)),
           ),
-          Icon(Icons.arrow_forward_ios, size: 16),
+          const Icon(Icons.arrow_forward_ios, size: 16),
         ],
       ),
     );
   }
 }
 
-// 🔹 Placeholder Screens
-class TicketsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text("Tickets Screen", style: TextStyle(fontSize: 24)));
-  }
-}
-
-class BusesScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text("Buses Screen", style: TextStyle(fontSize: 24)));
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text("Profile Screen", style: TextStyle(fontSize: 24)));
-  }
-}
