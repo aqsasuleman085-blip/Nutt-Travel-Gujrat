@@ -51,53 +51,6 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  void selectCity(bool isFrom) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return ListView(
-          children: cities.map((city) {
-            return ListTile(
-              title: Text(city),
-              onTap: () {
-                setState(() {
-                  isFrom ? fromCity = city : toCity = city;
-                });
-                Navigator.pop(context);
-              },
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  void selectDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030),
-    );
-
-    if (picked != null) {
-      setState(() {
-        date = "${picked.day}-${picked.month}-${picked.year}";
-      });
-    }
-  }
-
-  void swapCities() {
-    setState(() {
-      String temp = fromCity;
-      fromCity = toCity;
-      toCity = temp;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-// 🔹 HOME TAB (WITH FORM)
+// 🔹 HOME TAB
 class HomeTab extends StatefulWidget {
   @override
   _HomeTabState createState() => _HomeTabState();
@@ -227,7 +180,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Header
+              // 🔹 Header with notification
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
@@ -236,22 +189,27 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Welcome to", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                        Text("Welcome to",
+                            style: TextStyle(
+                                color: Colors.grey[700], fontSize: 16)),
                         Text("Nutt Travel Gujrat",
                             style: TextStyle(
-                                color: Colors.blue[800],
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold)),
+                              color: Colors.blue[800],
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            )),
                       ],
                     ),
                     IconButton(
-                        icon: Icon(Icons.notifications_none, color: Colors.black),
-                        onPressed: () {}),
+                      icon: Icon(Icons.notifications_none,
+                          color: Colors.black, size: 28),
+                      onPressed: () {},
+                    ),
                   ],
                 ),
               ),
 
-              // Animated Banner
+              // 🔹 Animated Banner
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: AnimatedBuilder(
@@ -267,11 +225,16 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Transform.translate(
-                              offset: Offset(_animation.value, 0),
-                              child: Icon(Icons.directions_bus, color: Colors.white, size: 30)),
+                            offset: Offset(_animation.value, 0),
+                            child: Icon(Icons.directions_bus,
+                                color: Colors.white, size: 30),
+                          ),
                           SizedBox(width: 10),
                           Text("Book Your Bus Now!",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18)),
                         ],
                       ),
                     );
@@ -281,7 +244,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
               SizedBox(height: 20),
 
-              // Main Card
+              // 🔹 Booking Card
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 16),
                 padding: EdgeInsets.all(16),
@@ -297,9 +260,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         child: buildField("From", fromCity)),
                     SizedBox(height: 10),
                     GestureDetector(
-                      onTap: swapCities,
-                      child: CircleAvatar(radius: 20, backgroundColor: Colors.blue, child: Icon(Icons.swap_vert, color: Colors.white)),
-                    ),
+                        onTap: swapCities,
+                        child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.blue,
+                            child: Icon(Icons.swap_vert,
+                                color: Colors.white))),
                     SizedBox(height: 10),
                     GestureDetector(
                         onTap: () => selectCity(false),
@@ -312,24 +278,28 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 18),
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                        ),
                         onPressed: () {
                           if (fromCity == "Select City" ||
                               toCity == "Select Destination" ||
                               date == "Select Date") {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(SnackBar(content: Text("Please fill all fields")));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text("Please fill all fields")));
                             return;
                           }
                           Navigator.pushNamed(context, '/buses');
                         },
-                        child: Text("Find Schedules", style: TextStyle(fontSize: 18)),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 18),
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15)),
+                        ),
+                        child: Text("Find Schedules",
+                            style:
+                                TextStyle(fontSize: 18, color: Colors.white)),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -352,7 +322,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         children: [
           Text("$title: ", style: TextStyle(color: Colors.grey[600])),
           Expanded(
-              child: Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+            child: Text(value,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ),
           Icon(Icons.arrow_forward_ios, size: 16),
         ],
       ),
