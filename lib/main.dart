@@ -53,7 +53,7 @@ class HomePage extends StatelessWidget {
               ),
 
               // 🔹 Image
-              Image.asset("assets/welcome.png", height: 200),
+              Image.asset("assets/welcome.webp", height: 200),
 
               // 🔹 Buttons
               Column(

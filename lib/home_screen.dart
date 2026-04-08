@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/buses_screen.dart';
 import 'package:nutt/profile_screen.dart';
-import 'package:nutt/tickets_screen.dart'; // ✅ Added
+import 'package:nutt/tickets_screen.dart';
+import 'bus_schedule_screen.dart'; // ✅ New schedule screen
+
 // 🔹 MAIN HOME SCREEN
 class HomeScreen extends StatefulWidget {
   @override
@@ -17,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   final List<Widget> _pages = [
     HomeTab(),
-    TicketsScreen(), // ✅ Connected
+    TicketsScreen(),
     BusesScreen(),
     ProfileScreen(),
   ];
@@ -108,6 +110,7 @@ class _HomeTabState extends State<HomeTab>
     super.dispose();
   }
 
+  // 🔹 CITY SELECT
   void selectCity(bool isFrom) {
     showModalBottomSheet(
       context: context,
@@ -116,15 +119,25 @@ class _HomeTabState extends State<HomeTab>
       ),
       builder: (context) {
         return ListView(
+          padding: const EdgeInsets.all(10),
           children: cities.map((city) {
-            return ListTile(
-              title: Text(city),
-              onTap: () {
-                setState(() {
-                  isFrom ? fromCity = city : toCity = city;
-                });
-                Navigator.pop(context);
-              },
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: Icon(Icons.location_city, color: Colors.blue),
+                title: Text(
+                  city,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  setState(() {
+                    isFrom ? fromCity = city : toCity = city;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
             );
           }).toList(),
         );
@@ -132,19 +145,54 @@ class _HomeTabState extends State<HomeTab>
     );
   }
 
+  // 🔹 COMPACT DATE PICKER
   void selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+            ),
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 320,
+              child: child!,
+            ),
+          ),
+        );
+      },
     );
 
     if (picked != null) {
       setState(() {
-        date = "${picked.day}-${picked.month}-${picked.year}";
+        date = "${picked.day} ${_monthName(picked.month)} ${picked.year}";
       });
     }
+  }
+
+  String _monthName(int m) {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    return months[m - 1];
   }
 
   void swapCities() {
@@ -171,8 +219,7 @@ class _HomeTabState extends State<HomeTab>
             children: [
               // 🔹 Header
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -248,29 +295,28 @@ class _HomeTabState extends State<HomeTab>
                   children: [
                     GestureDetector(
                         onTap: () => selectCity(true),
-                        child: buildField("From", fromCity)),
+                        child: buildField(fromCity, Icons.location_on)),
                     const SizedBox(height: 10),
                     GestureDetector(
                       onTap: swapCities,
                       child: const CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.blue,
-                        child:
-                            Icon(Icons.swap_vert, color: Colors.white),
+                        child: Icon(Icons.swap_vert, color: Colors.white),
                       ),
                     ),
                     const SizedBox(height: 10),
                     GestureDetector(
                         onTap: () => selectCity(false),
-                        child: buildField("To", toCity)),
+                        child: buildField(toCity, Icons.flag)),
                     const SizedBox(height: 10),
                     GestureDetector(
                         onTap: selectDate,
-                        child: buildField("Date", date)),
+                        child: buildField(date, Icons.calendar_today)),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         onPressed: () {
                           if (fromCity == "Select City" ||
                               toCity == "Select Destination" ||
@@ -281,23 +327,34 @@ class _HomeTabState extends State<HomeTab>
                                         Text("Please fill all fields")));
                             return;
                           }
+
+                          // 🔹 Navigate to BusScheduleScreen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BusScheduleScreen(
+                                fromCity: fromCity,
+                                toCity: toCity,
+                                date: date,
+                              ),
+                            ),
+                          );
                         },
+                        icon: Icon(Icons.search),
+                        label: const Text("Find Schedules"),
                         style: ElevatedButton.styleFrom(
                           padding:
                               const EdgeInsets.symmetric(vertical: 18),
                           backgroundColor: Colors.blue,
                           shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(15)),
+                              borderRadius: BorderRadius.circular(15)),
                         ),
-                        child: const Text("Find Schedules",
-                            style: TextStyle(
-                                fontSize: 18, color: Colors.white)),
                       ),
                     ),
                   ],
                 ),
               ),
+
               const SizedBox(height: 20)
             ],
           ),
@@ -306,20 +363,25 @@ class _HomeTabState extends State<HomeTab>
     );
   }
 
-  Widget buildField(String title, String value) {
+  // 🔹 FIELD (ONLY ICON + VALUE)
+  Widget buildField(String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F3F6),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade100),
       ),
       child: Row(
         children: [
-          Text("$title: ", style: TextStyle(color: Colors.grey[600])),
+          Icon(icon, color: Colors.blue),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
+            child: Text(
+              value,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
           const Icon(Icons.arrow_forward_ios, size: 16),
         ],
@@ -327,4 +389,3 @@ class _HomeTabState extends State<HomeTab>
     );
   }
 }
-

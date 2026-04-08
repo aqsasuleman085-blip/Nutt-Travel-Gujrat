@@ -17,8 +17,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // 📸 Pick Image
   Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
 
     if (pickedFile != null) {
       setState(() {
@@ -49,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.pop(context);
               },
               child: const Text("Save"),
-            )
+            ),
           ],
         );
       },
@@ -74,8 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   radius: 50,
                   backgroundImage: _image != null
                       ? FileImage(_image!)
-                      : const AssetImage("assets/profile.png")
-                          as ImageProvider,
+                      : const AssetImage("assets/profile.png") as ImageProvider,
                 ),
               ),
 
@@ -121,14 +121,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               GestureDetector(
                 onTap: _editName,
                 child: const Icon(Icons.edit, size: 18),
-              )
+              ),
             ],
           ),
 
-          const Text(
-            "aqsa@email.com",
-            style: TextStyle(color: Colors.grey),
-          ),
+          const Text("aqsa@email.com", style: TextStyle(color: Colors.grey)),
 
           const SizedBox(height: 20),
 
