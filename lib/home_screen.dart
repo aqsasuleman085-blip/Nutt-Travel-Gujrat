@@ -43,26 +43,56 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.confirmation_number), label: "Tickets"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.directions_bus), label: "Buses"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xff0F2027),
+            Color(0xff203A43),
+            Color(0xff2C5364),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: _pages[_currentIndex],
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xff0F2027),
+                Color(0xff203A43),
+                Color(0xff2C5364),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            selectedItemColor:
+                Colors.tealAccent.shade700.withOpacity(0.9),
+            unselectedItemColor: Colors.white70,
+            type: BottomNavigationBarType.fixed,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.confirmation_number), label: "Tickets"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.directions_bus), label: "Buses"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person), label: "Profile"),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -110,7 +140,6 @@ class _HomeTabState extends State<HomeTab>
     super.dispose();
   }
 
-  // 🔹 CITY SELECT
   void selectCity(bool isFrom) {
     showModalBottomSheet(
       context: context,
@@ -118,34 +147,51 @@ class _HomeTabState extends State<HomeTab>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return ListView(
-          padding: const EdgeInsets.all(10),
-          children: cities.map((city) {
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: Icon(Icons.location_city, color: Colors.blue),
-                title: Text(
-                  city,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xff0F2027),
+                Color(0xff203A43),
+                Color(0xff2C5364),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: ListView(
+            padding: const EdgeInsets.all(10),
+            children: cities.map((city) {
+              return Card(
+                color: Color(0xff203A43),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  leading: Icon(Icons.location_city,
+                      color: Colors.tealAccent.shade700.withOpacity(0.9)),
+                  title: Text(
+                    city,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      isFrom ? fromCity = city : toCity = city;
+                    });
+                    Navigator.pop(context);
+                  },
                 ),
-                onTap: () {
-                  setState(() {
-                    isFrom ? fromCity = city : toCity = city;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         );
       },
     );
   }
 
-  // 🔹 COMPACT DATE PICKER
   void selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -208,9 +254,13 @@ class _HomeTabState extends State<HomeTab>
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFE3F2FD), Color(0xFFF5F7FA)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xff0F2027),
+            Color(0xff203A43),
+            Color(0xff2C5364),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: SafeArea(
@@ -219,7 +269,8 @@ class _HomeTabState extends State<HomeTab>
             children: [
               // 🔹 Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -228,18 +279,25 @@ class _HomeTabState extends State<HomeTab>
                       children: [
                         Text("Welcome to",
                             style: TextStyle(
-                                color: Colors.grey[700], fontSize: 16)),
+                                color: Colors.white70, fontSize: 16)),
                         Text("Nutt Travel Gujrat",
                             style: TextStyle(
-                              color: Colors.blue[800],
+                              color: Colors.tealAccent.shade700.withOpacity(0.9),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             )),
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.notifications_none, size: 28),
-                      onPressed: () {},
+                      icon: const Icon(Icons.notifications_none,
+                          size: 28, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ProfileScreen()),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -254,7 +312,7 @@ class _HomeTabState extends State<HomeTab>
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent,
+                        color: Colors.tealAccent.shade700.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -285,7 +343,7 @@ class _HomeTabState extends State<HomeTab>
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Color(0xff203A43),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: const [
                     BoxShadow(color: Colors.black12, blurRadius: 10)
@@ -299,10 +357,10 @@ class _HomeTabState extends State<HomeTab>
                     const SizedBox(height: 10),
                     GestureDetector(
                       onTap: swapCities,
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.blue,
-                        child: Icon(Icons.swap_vert, color: Colors.white),
+                        backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
+                        child: const Icon(Icons.swap_vert, color: Colors.white),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -328,7 +386,6 @@ class _HomeTabState extends State<HomeTab>
                             return;
                           }
 
-                          // 🔹 Navigate to BusScheduleScreen
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -340,12 +397,12 @@ class _HomeTabState extends State<HomeTab>
                             ),
                           );
                         },
-                        icon: Icon(Icons.search),
+                        icon: const Icon(Icons.search),
                         label: const Text("Find Schedules"),
                         style: ElevatedButton.styleFrom(
                           padding:
                               const EdgeInsets.symmetric(vertical: 18),
-                          backgroundColor: Colors.blue,
+                          backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15)),
                         ),
@@ -363,27 +420,26 @@ class _HomeTabState extends State<HomeTab>
     );
   }
 
-  // 🔹 FIELD (ONLY ICON + VALUE)
   Widget buildField(String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F3F6),
+        color: Color(0xff2C5364),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade100),
+        border: Border.all(color: Colors.tealAccent.shade700.withOpacity(0.5)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.blue),
+          Icon(icon, color: Colors.tealAccent.shade700.withOpacity(0.9)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16),
+                  fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 16),
+          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white70),
         ],
       ),
     );

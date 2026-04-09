@@ -2,6 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+void main() {
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: ProfileScreen(),
+  ));
+}
+
+// 🔹 Login Screen (for logout navigation)
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xff203A43),
+      body: Center(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.tealAccent.shade700,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          onPressed: () {
+            // Navigate to ProfileScreen after "login"
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            );
+          },
+          child: const Text(
+            "Login",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// 🔹 Profile Screen
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -11,6 +52,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String userName = "Aqsa Suleman";
+  String userEmail = "aqsa@email.com";
   File? _image;
 
   final TextEditingController _nameController = TextEditingController();
@@ -57,93 +99,266 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // 🔹 Navigation functions
+  void _navigateToEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProfileScreen(
+          currentName: userName,
+          currentEmail: userEmail,
+          onSave: (name, email, password) {
+            setState(() {
+              userName = name;
+              userEmail = email;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _navigateToHelpSupport() {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Help & Support clicked")));
+  }
+
+  void _navigateToLogout() {
+    // Simulate logout by navigating to LoginScreen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
+
+  void _navigateToContactUs() {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Contact Us clicked")));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Profile")),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xff0F2027),
+            Color(0xff203A43),
+            Color(0xff2C5364),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(
+            "Profile",
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.tealAccent.shade700.withOpacity(0.9)),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        body: Column(
+          children: [
+            const SizedBox(height: 20),
 
-          // 👇 Profile Image with Edit Icon
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: _image != null
-                      ? FileImage(_image!)
-                      : const AssetImage("assets/profile.png") as ImageProvider,
-                ),
-              ),
-
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
+            // 👇 Profile Image with Edit Icon
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                GestureDetector(
                   onTap: _pickImage,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _image != null
+                        ? FileImage(_image!)
+                        : const AssetImage("assets/profile.png")
+                            as ImageProvider,
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.tealAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
-                    padding: const EdgeInsets.all(6),
-                    child: const Icon(
-                      Icons.camera_alt,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // 👇 Editable Name
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: _editName,
+                  child: Text(
+                    userName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      size: 18,
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // 👇 Editable Name
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: _editName,
-                child: Text(
-                  userName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const SizedBox(width: 5),
+                GestureDetector(
+                  onTap: _editName,
+                  child: const Icon(Icons.edit, size: 18, color: Colors.white),
                 ),
-              ),
-              const SizedBox(width: 5),
-              GestureDetector(
-                onTap: _editName,
-                child: const Icon(Icons.edit, size: 18),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const Text("aqsa@email.com", style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 5),
+            Text(userEmail,
+                style: const TextStyle(color: Colors.white70)),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          buildTile(Icons.person, "Edit Profile"),
-          buildTile(Icons.help, "Help & Support"),
-          buildTile(Icons.logout, "Logout"),
-        ],
+            // 🔹 Tiles
+            buildTile("Edit Profile", Icons.person, _navigateToEditProfile),
+            buildTile("Help & Support", Icons.help, _navigateToHelpSupport),
+            buildTile("Contact Us", Icons.contact_page, _navigateToContactUs),
+            buildTile("Logout", Icons.logout, _navigateToLogout),
+          ],
+        ),
       ),
     );
   }
 
   // 🔹 Common Tile Widget
-  Widget buildTile(IconData icon, String title) {
+  Widget buildTile(String title, IconData icon, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {},
+      leading: Icon(icon, color: Colors.tealAccent.shade700.withOpacity(0.9)),
+      title: Text(title,
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.tealAccent.shade700.withOpacity(0.9))),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+      onTap: onTap,
+    );
+  }
+}
+
+// 🔹 Edit Profile Form Screen
+class EditProfileScreen extends StatefulWidget {
+  final String currentName;
+  final String currentEmail;
+  final Function(String name, String email, String password) onSave;
+
+  const EditProfileScreen({
+    super.key,
+    required this.currentName,
+    required this.currentEmail,
+    required this.onSave,
+  });
+
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.currentName);
+    _emailController = TextEditingController(text: widget.currentEmail);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Edit Profile",
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.tealAccent.shade700.withOpacity(0.9)),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      backgroundColor: const Color(0xff203A43),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            buildTextField("Name", _nameController),
+            const SizedBox(height: 10),
+            buildTextField("Email", _emailController),
+            const SizedBox(height: 10),
+            buildTextField("Password", _passwordController, obscure: true),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.tealAccent.shade700,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                widget.onSave(
+                  _nameController.text,
+                  _emailController.text,
+                  _passwordController.text,
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Profile Updated Successfully")),
+                );
+                Navigator.pop(context);
+              },
+              child: const Text("Save",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildTextField(String label, TextEditingController controller,
+      {bool obscure = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.tealAccent.shade700),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.tealAccent.shade700, width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
     );
   }
 }

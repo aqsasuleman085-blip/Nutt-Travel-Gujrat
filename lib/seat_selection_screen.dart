@@ -35,58 +35,83 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
   Widget build(BuildContext context) {
     List buses = busesByDay[0]!;
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text("${widget.fromCity} → ${widget.toCity}"),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xff1E3C72), Color(0xff2A5298)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      body: ListView.builder(
-        itemCount: buses.length,
-        itemBuilder: (context, index) {
-          final bus = buses[index];
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(
+            "${widget.fromCity} → ${widget.toCity}",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.yellowAccent,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: ListView.builder(
+          itemCount: buses.length,
+          itemBuilder: (context, index) {
+            final bus = buses[index];
 
-          return Container(
-            margin: EdgeInsets.all(16),
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white,
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(bus['time'],
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                    Text("Rs ${bus['fare']}"),
-                  ],
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SeatSelectionScreen(
-                          fromCity: widget.fromCity,
-                          toCity: widget.toCity,
-                          time: bus['time'],
-                          date: widget.date,
+            return Container(
+              margin: EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.tealAccent.shade700.withOpacity(0.2),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(bus['time'],
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
+                      Text("Rs ${bus['fare']}",
+                          style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Colors.tealAccent.shade700.withOpacity(0.9),
+                      minimumSize: Size(double.infinity, 40),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SeatSelectionScreen(
+                            fromCity: widget.fromCity,
+                            toCity: widget.toCity,
+                            time: bus['time'],
+                            date: widget.date,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  child: Text("Seats: ${bus['seats']}"),
-                )
-              ],
-            ),
-          );
-        },
+                      );
+                    },
+                    child: Text("Seats: ${bus['seats']}"),
+                  )
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -116,112 +141,135 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   Map<int, String> selectedSeats = {};
   Set<int> tempSelected = {};
 
+  final Color seatColor = Colors.tealAccent.shade700.withOpacity(0.9);
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text("Seat Selection"),
-        centerTitle: true,
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xff141E30), Color(0xff243B55)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      body: Column(
-        children: [
-
-          /// INFO CARD
-          Container(
-            margin: EdgeInsets.all(10),
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: Colors.white,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(
+            "Seat Selection",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.tealAccent.shade700.withOpacity(0.9),
             ),
-            child: Row(
+          ),
+          centerTitle: true,
+        ),
+        body: Column(
+          children: [
+
+            /// INFO CARD
+            Container(
+              margin: EdgeInsets.all(10),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: Colors.tealAccent.shade700.withOpacity(0.2),
+              ),
+              child: Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text("${widget.fromCity} → ${widget.toCity}",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
+                      Text("Time: ${widget.time}",
+                          style: TextStyle(color: Colors.white70)),
+                      Text("Date: ${widget.date}",
+                          style: TextStyle(color: Colors.white70)),
+                    ],
+                  ),
+                  Icon(Icons.directions_bus, color: Colors.tealAccent.shade700),
+                ],
+              ),
+            ),
+
+            /// LEGEND
+            Row(
               mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text("${widget.fromCity} → ${widget.toCity}",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold)),
-                    Text("Time: ${widget.time}"),
-                    Text("Date: ${widget.date}"),
-                  ],
-                ),
-                Icon(Icons.directions_bus, color: Colors.blue),
+                  MainAxisAlignment.spaceEvenly,
+              children: const [
+                _LegendItem(color: Colors.tealAccent, text: "Available"),
+                _LegendItem(color: Colors.yellow, text: "Selected"),
+                _LegendItem(color: Colors.blue, text: "Male"),
+                _LegendItem(color: Colors.pink, text: "Female"),
               ],
             ),
-          ),
 
-          /// LEGEND (Include Selected)
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceEvenly,
-            children: const [
-              _LegendItem(color: Colors.grey, text: "Available"),
-              _LegendItem(color: Colors.yellow, text: "Selected"),
-              _LegendItem(color: Colors.blue, text: "Male"),
-              _LegendItem(color: Colors.pink, text: "Female"),
-            ],
-          ),
+            SizedBox(height: 10),
 
-          SizedBox(height: 10),
+            /// GRID
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return GridView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    itemCount: 45,
+                    gridDelegate:
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                    ),
+                    itemBuilder: (context, index) {
+                      int seat = index + 1;
+                      String? type = selectedSeats[seat];
 
-          /// 🔥 SCROLLABLE GRID
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return GridView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  itemCount: 45,
-                  gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                  ),
-                  itemBuilder: (context, index) {
-                    int seat = index + 1;
-                    String? type = selectedSeats[seat];
+                      Color color = seatColor;
+                      if (tempSelected.contains(seat))
+                        color = Colors.tealAccent.shade700.withOpacity(0.6);
+                      if (type == 'Male') color = Colors.blue;
+                      if (type == 'Female') color = Colors.pink;
 
-                    Color color = Colors.grey;
-                    if (tempSelected.contains(seat))
-                      color = Colors.yellow;
-                    if (type == 'Male') color = Colors.blue;
-                    if (type == 'Female') color = Colors.pink;
-
-                    return GestureDetector(
-                      onTap: () => _showDialog(seat),
-                      child: Column(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.event_seat,
-                              size: 26, color: color),
-                          SizedBox(height: 4),
-                          Text(
-                            "$seat",
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
+                      return GestureDetector(
+                        onTap: () => _showDialog(seat),
+                        child: Column(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.event_seat,
+                                size: 26, color: color),
+                            SizedBox(height: 4),
+                            Text(
+                              "$seat",
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// 🔥 CLEAN WHITE POPUP
+  /// POPUP
   void _showDialog(int seat) {
     String? selectedGender;
 
@@ -230,7 +278,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       builder: (_) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return Dialog(
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.transparent,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
             child: Padding(
@@ -239,7 +287,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
 
-                  /// TOP ROW: Title + Close
+                  /// TOP ROW
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -284,7 +332,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
                   SizedBox(height: 25),
 
-                  /// BUTTON BLUE
+                  /// BUTTON
                   ElevatedButton(
                     onPressed: () {
                       if (selectedGender != null) {
@@ -296,7 +344,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
                       minimumSize: Size(double.infinity, 45),
                     ),
                     child: Text("Confirm"),
@@ -349,7 +397,7 @@ class _LegendItem extends StatelessWidget {
       children: [
         Icon(Icons.event_seat, size: 18, color: color),
         SizedBox(height: 4),
-        Text(text, style: TextStyle(fontSize: 11)),
+        Text(text, style: TextStyle(fontSize: 11, color: Colors.white)),
       ],
     );
   }

@@ -10,7 +10,7 @@ class TicketsScreen extends StatefulWidget {
 class _TicketsScreenState extends State<TicketsScreen> {
   int selectedIndex = 0; // 0 = Upcoming, 1 = Past
 
-  // Your custom data (edit freely)
+  // 🔹 Sample ticket data
   final List<Map<String, String>> upcomingTickets = [
     {
       "bus": "Nutt Coach Service",
@@ -35,6 +35,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   Widget buildTicketCard(Map<String, String> ticket) {
     return Card(
+      color: Color(0xff203A43),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -45,30 +46,30 @@ class _TicketsScreenState extends State<TicketsScreen> {
           children: [
             Text(
               ticket["bus"]!,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent),
+                  color: Colors.tealAccent.shade700.withOpacity(0.9)),
             ),
             const SizedBox(height: 6),
             Text(
               ticket["route"]!,
-              style: const TextStyle(fontSize: 15),
+              style: const TextStyle(fontSize: 15, color: Colors.white70),
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Date: ${ticket["date"]}"),
-                Text("Time: ${ticket["time"]}"),
+                Text("Date: ${ticket["date"]}", style: TextStyle(color: Colors.white70)),
+                Text("Time: ${ticket["time"]}", style: TextStyle(color: Colors.white70)),
               ],
             ),
             const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Seat: ${ticket["seat"]}"),
-                Text("ID: ${ticket["id"]}"),
+                Text("Seat: ${ticket["seat"]}", style: TextStyle(color: Colors.white70)),
+                Text("ID: ${ticket["id"]}", style: TextStyle(color: Colors.white70)),
               ],
             ),
             const SizedBox(height: 12),
@@ -76,6 +77,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
+                  ),
                   onPressed: () {},
                   child: const Text("View"),
                 ),
@@ -89,7 +93,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   Widget buildList(List<Map<String, String>> tickets) {
     if (tickets.isEmpty) {
-      return const Center(child: Text("No tickets available"));
+      return const Center(
+        child: Text(
+          "No tickets available",
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -112,7 +121,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           buildButton("Upcoming", 0),
           buildButton("Past Tickets", 1),
@@ -122,15 +130,16 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }
 
   Widget buildButton(String text, int index) {
+    bool isSelected = selectedIndex == index;
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                selectedIndex == index ? Colors.blue : Colors.grey[300],
-            foregroundColor:
-                selectedIndex == index ? Colors.white : Colors.black,
+            backgroundColor: isSelected
+                ? Colors.tealAccent.shade700.withOpacity(0.9)
+                : Colors.grey[700],
+            foregroundColor: isSelected ? Colors.white : Colors.white70,
           ),
           onPressed: () {
             setState(() {
@@ -145,23 +154,40 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Tickets Detail",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xff0F2027),
+            Color(0xff203A43),
+            Color(0xff2C5364),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          buildTopButtons(),
-          Expanded(child: getCurrentScreen()),
-        ],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(
+            "Tickets Detail",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+              color:  Colors.tealAccent.shade700.withOpacity(0.9), // ✅ updated color
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: Column(
+          children: [
+            buildTopButtons(),
+            Expanded(child: getCurrentScreen()),
+          ],
+        ),
       ),
     );
   }
