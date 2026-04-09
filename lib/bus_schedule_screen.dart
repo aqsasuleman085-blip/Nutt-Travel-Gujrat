@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/seat_selection_screen.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -346,217 +347,217 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
 }
 
 /// 🔹 UPDATED SEAT SELECTION SCREEN
-class SeatSelectionScreen extends StatefulWidget {
-  final String fromCity;
-  final String toCity;
-  final String time;
-  final String date;
+// class SeatSelectionScreen extends StatefulWidget {
+//   final String fromCity;
+//   final String toCity;
+//   final String time;
+//   final String date;
 
-  const SeatSelectionScreen({
-    super.key,
-    required this.fromCity,
-    required this.toCity,
-    required this.time,
-    required this.date,
-  });
+//   const SeatSelectionScreen({
+//     super.key,
+//     required this.fromCity,
+//     required this.toCity,
+//     required this.time,
+//     required this.date,
+//   });
 
-  @override
-  State<SeatSelectionScreen> createState() =>
-      _SeatSelectionScreenState();
-}
+//   @override
+//   State<SeatSelectionScreen> createState() =>
+//       _SeatSelectionScreenState();
+// }
 
-class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
-  Map<int, String> selectedSeats = {}; // seatNumber -> Male/Female
-  Set<int> tempSelected = {}; // temporary yellow
+// class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
+//   Map<int, String> selectedSeats = {}; // seatNumber -> Male/Female
+//   Set<int> tempSelected = {}; // temporary yellow
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text(
-          "Seat Selection",
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            /// INFO CARD
-            Container(
-              margin: EdgeInsets.all(16),
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 6)
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "${widget.fromCity} → ${widget.toCity}",
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 6),
-                      Text("Time: ${widget.time}"),
-                      Text("Date: ${widget.date}"),
-                    ],
-                  ),
-                  Icon(Icons.directions_bus,
-                      size: 40, color: Colors.blue),
-                ],
-              ),
-            ),
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.grey[100],
+//       appBar: AppBar(
+//         backgroundColor: Colors.blue,
+//         title: Text(
+//           "Seat Selection",
+//           style: TextStyle(
+//               fontSize: 20, fontWeight: FontWeight.bold),
+//         ),
+//         centerTitle: true,
+//       ),
+//       body: SingleChildScrollView(
+//         child: Column(
+//           children: [
+//             /// INFO CARD
+//             Container(
+//               margin: EdgeInsets.all(16),
+//               padding: EdgeInsets.all(16),
+//               decoration: BoxDecoration(
+//                 borderRadius: BorderRadius.circular(16),
+//                 color: Colors.white,
+//                 boxShadow: [
+//                   BoxShadow(color: Colors.black12, blurRadius: 6)
+//                 ],
+//               ),
+//               child: Row(
+//                 mainAxisAlignment:
+//                     MainAxisAlignment.spaceBetween,
+//                 children: [
+//                   Column(
+//                     crossAxisAlignment:
+//                         CrossAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         "${widget.fromCity} → ${widget.toCity}",
+//                         style: TextStyle(
+//                             fontSize: 16,
+//                             fontWeight: FontWeight.bold),
+//                       ),
+//                       SizedBox(height: 6),
+//                       Text("Time: ${widget.time}"),
+//                       Text("Date: ${widget.date}"),
+//                     ],
+//                   ),
+//                   Icon(Icons.directions_bus,
+//                       size: 40, color: Colors.blue),
+//                 ],
+//               ),
+//             ),
 
-            /// LEGEND
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 16),
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceAround,
-                children: const [
-                  _LegendItem(color: Colors.grey, text: "Available"),
-                  _LegendItem(color: Colors.yellow, text: "Selected"),
-                  _LegendItem(color: Colors.blue, text: "Male"),
-                  _LegendItem(color: Colors.pink, text: "Female"),
-                ],
-              ),
-            ),
+//             /// LEGEND
+//             Container(
+//               margin: EdgeInsets.symmetric(horizontal: 16),
+//               padding: EdgeInsets.all(12),
+//               decoration: BoxDecoration(
+//                 color: Colors.white,
+//                 borderRadius: BorderRadius.circular(12),
+//               ),
+//               child: Row(
+//                 mainAxisAlignment:
+//                     MainAxisAlignment.spaceAround,
+//                 children: const [
+//                   _LegendItem(color: Colors.grey, text: "Available"),
+//                   _LegendItem(color: Colors.yellow, text: "Selected"),
+//                   _LegendItem(color: Colors.blue, text: "Male"),
+//                   _LegendItem(color: Colors.pink, text: "Female"),
+//                 ],
+//               ),
+//             ),
 
-            SizedBox(height: 16),
+//             SizedBox(height: 16),
 
-            /// SEAT GRID
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 16),
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 6)
-                ],
-              ),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: 45,
-                gridDelegate:
-                    SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemBuilder: (context, index) {
-                  int seatNumber = index + 1;
-                  String? seatType = selectedSeats[seatNumber];
+//             /// SEAT GRID
+//             Container(
+//               margin: EdgeInsets.symmetric(horizontal: 16),
+//               padding: EdgeInsets.all(16),
+//               decoration: BoxDecoration(
+//                 color: Colors.white,
+//                 borderRadius: BorderRadius.circular(16),
+//                 boxShadow: [
+//                   BoxShadow(color: Colors.black12, blurRadius: 6)
+//                 ],
+//               ),
+//               child: GridView.builder(
+//                 shrinkWrap: true,
+//                 physics: NeverScrollableScrollPhysics(),
+//                 itemCount: 45,
+//                 gridDelegate:
+//                     SliverGridDelegateWithFixedCrossAxisCount(
+//                   crossAxisCount: 5,
+//                   mainAxisSpacing: 10,
+//                   crossAxisSpacing: 10,
+//                 ),
+//                 itemBuilder: (context, index) {
+//                   int seatNumber = index + 1;
+//                   String? seatType = selectedSeats[seatNumber];
 
-                  Color seatColor = Colors.grey[300]!;
-                  if (tempSelected.contains(seatNumber)) seatColor = Colors.yellow;
-                  if (seatType == 'Male') seatColor = Colors.blue;
-                  if (seatType == 'Female') seatColor = Colors.pink;
+//                   Color seatColor = Colors.grey[300]!;
+//                   if (tempSelected.contains(seatNumber)) seatColor = Colors.yellow;
+//                   if (seatType == 'Male') seatColor = Colors.blue;
+//                   if (seatType == 'Female') seatColor = Colors.pink;
 
-                  return GestureDetector(
-                    onTap: () => _showGenderDialog(seatNumber),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: seatColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.event_seat,
-                                color: (seatColor == Colors.grey[300]) ? Colors.black : Colors.white),
-                            SizedBox(height: 4),
-                            Text(
-                              "$seatNumber",
-                              style: TextStyle(
-                                  color: (seatColor == Colors.grey[300]) ? Colors.black : Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+//                   return GestureDetector(
+//                     onTap: () => _showGenderDialog(seatNumber),
+//                     child: Container(
+//                       decoration: BoxDecoration(
+//                         color: seatColor,
+//                         borderRadius: BorderRadius.circular(8),
+//                       ),
+//                       child: Center(
+//                         child: Column(
+//                           mainAxisAlignment: MainAxisAlignment.center,
+//                           children: [
+//                             Icon(Icons.event_seat,
+//                                 color: (seatColor == Colors.grey[300]) ? Colors.black : Colors.white),
+//                             SizedBox(height: 4),
+//                             Text(
+//                               "$seatNumber",
+//                               style: TextStyle(
+//                                   color: (seatColor == Colors.grey[300]) ? Colors.black : Colors.white,
+//                                   fontWeight: FontWeight.bold),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
 
-            SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
+//             SizedBox(height: 20),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
 
-  void _showGenderDialog(int seatNumber) {
-    setState(() {
-      tempSelected.add(seatNumber);
-    });
+//   void _showGenderDialog(int seatNumber) {
+//     setState(() {
+//       tempSelected.add(seatNumber);
+//     });
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Select Gender for seat $seatNumber"),
-          content: Text("Choose Male or Female"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  selectedSeats[seatNumber] = 'Male';
-                  tempSelected.remove(seatNumber);
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Male"),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  selectedSeats[seatNumber] = 'Female';
-                  tempSelected.remove(seatNumber);
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Female"),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  selectedSeats.remove(seatNumber);
-                  tempSelected.remove(seatNumber);
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Clear"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
+//     showDialog(
+//       context: context,
+//       builder: (context) {
+//         return AlertDialog(
+//           title: Text("Select Gender for seat $seatNumber"),
+//           content: Text("Choose Male or Female"),
+//           actions: [
+//             TextButton(
+//               onPressed: () {
+//                 setState(() {
+//                   selectedSeats[seatNumber] = 'Male';
+//                   tempSelected.remove(seatNumber);
+//                 });
+//                 Navigator.pop(context);
+//               },
+//               child: Text("Male"),
+//             ),
+//             TextButton(
+//               onPressed: () {
+//                 setState(() {
+//                   selectedSeats[seatNumber] = 'Female';
+//                   tempSelected.remove(seatNumber);
+//                 });
+//                 Navigator.pop(context);
+//               },
+//               child: Text("Female"),
+//             ),
+//             TextButton(
+//               onPressed: () {
+//                 setState(() {
+//                   selectedSeats.remove(seatNumber);
+//                   tempSelected.remove(seatNumber);
+//                 });
+//                 Navigator.pop(context);
+//               },
+//               child: Text("Clear"),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+// }
 
 /// LEGEND ITEM
 class _LegendItem extends StatelessWidget {
