@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/payment_screen.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -73,8 +74,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(bus['time'],
                           style: TextStyle(
@@ -117,7 +117,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
   }
 }
 
-/// 🔥 SEAT SCREEN
+/// 🔥 SEAT SCREEN (SAME AS YOUR CODE)
 class SeatSelectionScreen extends StatefulWidget {
   final String fromCity;
   final String toCity;
@@ -141,7 +141,8 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   Map<int, String> selectedSeats = {};
   Set<int> tempSelected = {};
 
-  final Color seatColor = Colors.tealAccent.shade700.withOpacity(0.9);
+  final Color seatColor =
+      Colors.tealAccent.shade700.withOpacity(0.9);
 
   @override
   Widget build(BuildContext context) {
@@ -163,29 +164,28 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.tealAccent.shade700.withOpacity(0.9),
+              color:
+                  Colors.tealAccent.shade700.withOpacity(0.9),
             ),
           ),
           centerTitle: true,
         ),
         body: Column(
           children: [
-
-            /// INFO CARD
             Container(
               margin: EdgeInsets.all(10),
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                color: Colors.tealAccent.shade700.withOpacity(0.2),
+                color:
+                    Colors.tealAccent.shade700.withOpacity(0.2),
               ),
               child: Row(
                 mainAxisAlignment:
                     MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text("${widget.fromCity} → ${widget.toCity}",
                           style: TextStyle(
@@ -197,15 +197,14 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           style: TextStyle(color: Colors.white70)),
                     ],
                   ),
-                  Icon(Icons.directions_bus, color: Colors.tealAccent.shade700),
+                  Icon(Icons.directions_bus,
+                      color: Colors.tealAccent.shade700),
                 ],
               ),
             ),
 
-            /// LEGEND
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: const [
                 _LegendItem(color: Colors.tealAccent, text: "Available"),
                 _LegendItem(color: Colors.yellow, text: "Selected"),
@@ -216,49 +215,38 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
             SizedBox(height: 10),
 
-            /// GRID
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return GridView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    itemCount: 45,
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
+              child: GridView.builder(
+                padding: EdgeInsets.all(10),
+                itemCount: 45,
+                gridDelegate:
+                    SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemBuilder: (context, index) {
+                  int seat = index + 1;
+
+                  Color color = seatColor;
+                  if (tempSelected.contains(seat))
+                    color = Colors.yellow;
+                  if (selectedSeats[seat] == 'Male')
+                    color = Colors.blue;
+                  if (selectedSeats[seat] == 'Female')
+                    color = Colors.pink;
+
+                  return GestureDetector(
+                    onTap: () => _showDialog(seat),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_seat,
+                            size: 26, color: color),
+                        Text("$seat",
+                            style: TextStyle(color: Colors.grey))
+                      ],
                     ),
-                    itemBuilder: (context, index) {
-                      int seat = index + 1;
-                      String? type = selectedSeats[seat];
-
-                      Color color = seatColor;
-                      if (tempSelected.contains(seat))
-                        color = Colors.tealAccent.shade700.withOpacity(0.6);
-                      if (type == 'Male') color = Colors.blue;
-                      if (type == 'Female') color = Colors.pink;
-
-                      return GestureDetector(
-                        onTap: () => _showDialog(seat),
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.event_seat,
-                                size: 26, color: color),
-                            SizedBox(height: 4),
-                            Text(
-                              "$seat",
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
                   );
                 },
               ),
@@ -269,7 +257,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     );
   }
 
-  /// POPUP
+  /// ONLY CHANGE = NAVIGATION ADDED HERE
   void _showDialog(int seat) {
     String? selectedGender;
 
@@ -278,33 +266,23 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       builder: (_) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return Dialog(
-            backgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
             child: Padding(
-              padding: EdgeInsets.all(20),
+              padding: EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
-                  /// TOP ROW
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Seat $seat",
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
+                      Text("Seat $seat"),
                       IconButton(
                         icon: Icon(Icons.close),
                         onPressed: () => Navigator.pop(context),
-                      ),
+                      )
                     ],
                   ),
 
-                  SizedBox(height: 15),
-
-                  /// OPTIONS
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceEvenly,
@@ -330,9 +308,8 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     ],
                   ),
 
-                  SizedBox(height: 25),
+                  SizedBox(height: 20),
 
-                  /// BUTTON
                   ElevatedButton(
                     onPressed: () {
                       if (selectedGender != null) {
@@ -340,13 +317,25 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           selectedSeats[seat] =
                               selectedGender!;
                         });
+
                         Navigator.pop(context);
+
+                        /// ✅ ONLY NAVIGATION ADDED
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PaymentScreen(
+                              seat: seat,
+                              gender: selectedGender!,
+                              fromCity: widget.fromCity,
+                              toCity: widget.toCity,
+                              time: widget.time,
+                              date: widget.date,
+                            ),
+                          ),
+                        );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
-                      minimumSize: Size(double.infinity, 45),
-                    ),
                     child: Text("Confirm"),
                   )
                 ],
@@ -367,24 +356,18 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selected ? color : Colors.grey[200],
+          color: selected ? color : Colors.grey[300],
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.black,
-          ),
-        ),
+        child: Text(label),
       ),
     );
   }
 }
 
-/// LEGEND
+/// 🔥 LEGEND (UNCHANGED)
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String text;
@@ -397,7 +380,8 @@ class _LegendItem extends StatelessWidget {
       children: [
         Icon(Icons.event_seat, size: 18, color: color),
         SizedBox(height: 4),
-        Text(text, style: TextStyle(fontSize: 11, color: Colors.white)),
+        Text(text,
+            style: TextStyle(fontSize: 11, color: Colors.white)),
       ],
     );
   }

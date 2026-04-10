@@ -5,11 +5,11 @@ import 'dart:io';
 void main() {
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: ProfileScreen(),
+    home: LoginScreen(), // 🔥 Start from Login Screen
   ));
 }
 
-// 🔹 Login Screen (for logout navigation)
+// 🔹 Login Screen (Welcome Page)
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -26,7 +26,6 @@ class LoginScreen extends StatelessWidget {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
           onPressed: () {
-            // Navigate to ProfileScreen after "login"
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const ProfileScreen()),
@@ -123,17 +122,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .showSnackBar(const SnackBar(content: Text("Help & Support clicked")));
   }
 
-  void _navigateToLogout() {
-    // Simulate logout by navigating to LoginScreen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
-  }
-
   void _navigateToContactUs() {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("Contact Us clicked")));
+  }
+
+  // 🔥 Logout → back to LoginScreen
+  void _navigateToLogout() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -167,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const SizedBox(height: 20),
 
-            // 👇 Profile Image with Edit Icon
+            // Profile Image
             Stack(
               alignment: Alignment.center,
               children: [
@@ -205,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 10),
 
-            // 👇 Editable Name
+            // Name
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -234,7 +234,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 🔹 Tiles
             buildTile("Edit Profile", Icons.person, _navigateToEditProfile),
             buildTile("Help & Support", Icons.help, _navigateToHelpSupport),
             buildTile("Contact Us", Icons.contact_page, _navigateToContactUs),
@@ -245,7 +244,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Common Tile Widget
   Widget buildTile(String title, IconData icon, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.tealAccent.shade700.withOpacity(0.9)),
@@ -253,13 +251,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.tealAccent.shade700.withOpacity(0.9))),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+      trailing:
+          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
       onTap: onTap,
     );
   }
 }
 
-// 🔹 Edit Profile Form Screen
+// 🔹 Edit Profile Screen
 class EditProfileScreen extends StatefulWidget {
   final String currentName;
   final String currentEmail;
@@ -317,9 +316,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.tealAccent.shade700,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
               onPressed: () {
                 widget.onSave(
@@ -328,12 +326,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   _passwordController.text,
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Profile Updated Successfully")),
+                  const SnackBar(
+                      content: Text("Profile Updated Successfully")),
                 );
                 Navigator.pop(context);
               },
-              child: const Text("Save",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: const Text("Save"),
             )
           ],
         ),
@@ -352,11 +350,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         labelStyle: const TextStyle(color: Colors.white70),
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.tealAccent.shade700),
-          borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.tealAccent.shade700, width: 2),
-          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );
