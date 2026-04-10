@@ -18,14 +18,20 @@ class _LoginPageState extends State<LoginPage>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
 
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.forward();
   }
@@ -45,11 +51,7 @@ class _LoginPageState extends State<LoginPage>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xff0F2027),
-              Color(0xff203A43),
-              Color(0xff2C5364),
-            ],
+            colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -86,7 +88,7 @@ class _LoginPageState extends State<LoginPage>
                                   fontSize: 15,
                                   color: Colors.white70,
                                 ),
-                              )
+                              ),
                             ],
                           ),
 
@@ -94,7 +96,9 @@ class _LoginPageState extends State<LoginPage>
                           Column(
                             children: <Widget>[
                               inputFile(
-                                  label: "Email", icon: Icons.email_outlined),
+                                label: "Email",
+                                icon: Icons.email_outlined,
+                              ),
                               const SizedBox(height: 10),
                               const PasswordInputField(label: "Password"),
                             ],
@@ -110,7 +114,8 @@ class _LoginPageState extends State<LoginPage>
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => HomeScreen()),
+                                  builder: (context) => HomeScreen(),
+                                ),
                               );
                             },
                             onTapCancel: () {
@@ -123,7 +128,9 @@ class _LoginPageState extends State<LoginPage>
                               height: 60,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: Colors.tealAccent.shade700.withOpacity(0.9),
+                                color: Colors.tealAccent.shade700.withOpacity(
+                                  0.9,
+                                ),
                                 borderRadius: BorderRadius.circular(50),
                               ),
                               child: const Center(
@@ -169,16 +176,16 @@ class _LoginPageState extends State<LoginPage>
                             height: 200,
                             decoration: const BoxDecoration(
                               image: DecorationImage(
-                                image: AssetImage("assets/background.png"),
+                                image: AssetImage("assets/background.jpeg"),
                                 fit: BoxFit.fitHeight,
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -205,8 +212,10 @@ Widget inputFile({required String label, IconData? icon}) {
       TextField(
         decoration: InputDecoration(
           prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: 10,
+          ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.white70),
           ),
@@ -266,8 +275,10 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
                 });
               },
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 0,
+              horizontal: 10,
+            ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.white70),
             ),

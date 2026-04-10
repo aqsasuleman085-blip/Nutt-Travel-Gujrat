@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'payment_screen.dart';
 
 class BusesScreen extends StatelessWidget {
   const BusesScreen({super.key});
@@ -34,64 +35,97 @@ class BusesScreen extends StatelessWidget {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
+
         appBar: AppBar(
           title: const Text(
             "Available Buses",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
           centerTitle: true,
-          backgroundColor:Colors.tealAccent.shade700.withOpacity(0.9),
+          backgroundColor:
+              Colors.tealAccent.shade700.withOpacity(0.9),
           elevation: 0,
         ),
+
         body: ListView.builder(
           itemCount: buses.length,
           itemBuilder: (context, index) {
             final bus = buses[index];
 
             return Card(
-              color: Color(0xff203A43),
+              color: const Color(0xff203A43),
               margin: const EdgeInsets.all(10),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              elevation: 3,
+                borderRadius: BorderRadius.circular(15),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(15),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(bus["name"]!,
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.tealAccent.shade700.withOpacity(0.9))),
+
+                    Text(
+                      bus["name"]!,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.tealAccent.shade700,
+                      ),
+                    ),
+
                     const SizedBox(height: 5),
-                    Text("Time: ${bus["time"]}", style: TextStyle(color: Colors.white70)),
-                    Text("Available Seats: ${bus["seats"]}", style: TextStyle(color: Colors.white70)),
+
+                    Text(
+                      "Time: ${bus["time"]}",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+
+                    Text(
+                      "Available Seats: ${bus["seats"]}",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+
                     const SizedBox(height: 5),
-                    Text("Price: Rs ${bus["price"]}",
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
+
+                    Text(
+                      "Price: Rs ${bus["price"]}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+
                     const SizedBox(height: 10),
+
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
+                          backgroundColor:
+                              Colors.tealAccent.shade700.withOpacity(0.9),
                         ),
+
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    "Booked ${bus["name"]} successfully")),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PaymentScreen(
+                                date: "10 Apr 2026",
+                                time: bus["time"]!,
+                                toCity: "Karachi",
+                                fromCity: "Lahore",
+                                gender: "N/A",
+                                seat: int.parse(bus["seats"]!),
+                                fare: int.parse(bus["price"]!)
+                              ),
+                            ),
                           );
                         },
+
                         child: const Text("Book Now"),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),

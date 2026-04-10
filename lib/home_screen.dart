@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/bus_schedule.dart';
 import 'package:nutt/buses_screen.dart';
+import 'package:nutt/button.dart';
+import 'package:nutt/colors.dart';
 import 'package:nutt/profile_screen.dart';
 import 'package:nutt/tickets_screen.dart';
-import 'bus_schedule_screen.dart'; // ✅ New schedule screen
 
 // 🔹 MAIN HOME SCREEN
 class HomeScreen extends StatefulWidget {
@@ -27,12 +29,14 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: Duration(seconds: 2))
-          ..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0, end: 20).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(
+      begin: 0,
+      end: 20,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -46,11 +50,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xff0F2027),
-            Color(0xff203A43),
-            Color(0xff2C5364),
-          ],
+          colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -61,11 +61,7 @@ class _HomeScreenState extends State<HomeScreen>
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xff0F2027),
-                Color(0xff203A43),
-                Color(0xff2C5364),
-              ],
+              colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -78,18 +74,23 @@ class _HomeScreenState extends State<HomeScreen>
                 _currentIndex = index;
               });
             },
-            selectedItemColor:
-                Colors.tealAccent.shade700.withOpacity(0.9),
+            selectedItemColor: Colors.tealAccent.shade700.withOpacity(0.9),
             unselectedItemColor: Colors.white70,
             type: BottomNavigationBarType.fixed,
             items: const [
               BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.confirmation_number), label: "Tickets"),
+                icon: Icon(Icons.confirmation_number),
+                label: "Tickets",
+              ),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.directions_bus), label: "Buses"),
+                icon: Icon(Icons.directions_bus),
+                label: "Buses",
+              ),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.person), label: "Profile"),
+                icon: Icon(Icons.person),
+                label: "Profile",
+              ),
             ],
           ),
         ),
@@ -104,8 +105,7 @@ class HomeTab extends StatefulWidget {
   _HomeTabState createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab>
-    with SingleTickerProviderStateMixin {
+class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   String fromCity = "Select City";
   String toCity = "Select Destination";
   String date = "Select Date";
@@ -126,12 +126,14 @@ class _HomeTabState extends State<HomeTab>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: Duration(seconds: 2))
-          ..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0, end: 20).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(
+      begin: 0,
+      end: 20,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -150,11 +152,7 @@ class _HomeTabState extends State<HomeTab>
         return Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xff0F2027),
-                Color(0xff203A43),
-                Color(0xff2C5364),
-              ],
+              colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -166,16 +164,20 @@ class _HomeTabState extends State<HomeTab>
                 color: Color(0xff203A43),
                 elevation: 2,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: ListTile(
-                  leading: Icon(Icons.location_city,
-                      color: Colors.tealAccent.shade700.withOpacity(0.9)),
+                  leading: Icon(
+                    Icons.location_city,
+                    color: Colors.tealAccent.shade700.withOpacity(0.9),
+                  ),
                   title: Text(
                     city,
                     style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                   onTap: () {
                     setState(() {
@@ -203,15 +205,11 @@ class _HomeTabState extends State<HomeTab>
           data: Theme.of(context).copyWith(
             dialogTheme: DialogThemeData(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
+                borderRadius: BorderRadius.circular(15),
+              ),
             ),
           ),
-          child: Center(
-            child: SizedBox(
-              width: 320,
-              child: child!,
-            ),
-          ),
+          child: Center(child: SizedBox(width: 320, child: child!)),
         );
       },
     );
@@ -236,7 +234,7 @@ class _HomeTabState extends State<HomeTab>
       "Sep",
       "Oct",
       "Nov",
-      "Dec"
+      "Dec",
     ];
     return months[m - 1];
   }
@@ -254,11 +252,7 @@ class _HomeTabState extends State<HomeTab>
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xff0F2027),
-            Color(0xff203A43),
-            Color(0xff2C5364),
-          ],
+          colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -269,33 +263,42 @@ class _HomeTabState extends State<HomeTab>
             children: [
               // 🔹 Header
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Welcome to",
-                            style: TextStyle(
-                                color: Colors.white70, fontSize: 16)),
-                        Text("Nutt Travel Gujrat",
-                            style: TextStyle(
-                              color: Colors.tealAccent.shade700.withOpacity(0.9),
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            )),
+                        Text(
+                          "Welcome to",
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                        Text(
+                          "Nutt Travel Gujrat",
+                          style: TextStyle(
+                            color: Colors.tealAccent.shade700.withOpacity(0.9),
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.notifications_none,
-                          size: 28, color: Colors.white),
+                      icon: const Icon(
+                        Icons.notifications_none,
+                        size: 28,
+                        color: Colors.white,
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => ProfileScreen()),
+                            builder: (context) => ProfileScreen(),
+                          ),
                         );
                       },
                     ),
@@ -320,15 +323,21 @@ class _HomeTabState extends State<HomeTab>
                         children: [
                           Transform.translate(
                             offset: Offset(_animation.value, 0),
-                            child: const Icon(Icons.directions_bus,
-                                color: Colors.white, size: 30),
+                            child: const Icon(
+                              Icons.directions_bus,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
                           const SizedBox(width: 10),
-                          const Text("Book Your Bus Now!",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18)),
+                          const Text(
+                            "Book Your Bus Now!",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -346,73 +355,90 @@ class _HomeTabState extends State<HomeTab>
                   color: Color(0xff203A43),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 10)
+                    BoxShadow(color: Colors.black12, blurRadius: 10),
                   ],
                 ),
                 child: Column(
                   children: [
                     GestureDetector(
-                        onTap: () => selectCity(true),
-                        child: buildField(fromCity, Icons.location_on)),
+                      onTap: () => selectCity(true),
+                      child: buildField(fromCity, Icons.location_on),
+                    ),
                     const SizedBox(height: 10),
                     GestureDetector(
                       onTap: swapCities,
                       child: CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
+                        backgroundColor: Colors.tealAccent.shade700.withOpacity(
+                          0.9,
+                        ),
                         child: const Icon(Icons.swap_vert, color: Colors.white),
                       ),
                     ),
                     const SizedBox(height: 10),
                     GestureDetector(
-                        onTap: () => selectCity(false),
-                        child: buildField(toCity, Icons.flag)),
+                      onTap: () => selectCity(false),
+                      child: buildField(toCity, Icons.flag),
+                    ),
                     const SizedBox(height: 10),
                     GestureDetector(
-                        onTap: selectDate,
-                        child: buildField(date, Icons.calendar_today)),
+                      onTap: selectDate,
+                      child: buildField(date, Icons.calendar_today),
+                    ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          if (fromCity == "Select City" ||
-                              toCity == "Select Destination" ||
-                              date == "Select Date") {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text("Please fill all fields")));
-                            return;
-                          }
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: ElevatedButton.icon(
+                    //     onPressed: () {
+                    //       // if (fromCity == "Select City" ||
+                    //       //     toCity == "Select Destination" ||
+                    //       //     date == "Select Date") {
+                    //       //   ScaffoldMessenger.of(context).showSnackBar(
+                    //       //     const SnackBar(
+                    //       //       content: Text("Please fill all fields"),
+                    //       //     ),
+                    //       //   );
+                    //       //   return;
+                    //       // }
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BusScheduleScreen(
-                                fromCity: fromCity,
-                                toCity: toCity,
-                                date: date,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.search),
-                        label: const Text("Find Schedules"),
-                        style: ElevatedButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 18),
-                          backgroundColor: Colors.tealAccent.shade700.withOpacity(0.9),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15)),
-                        ),
-                      ),
+                    //       Navigator.push(
+                    //         context,
+                    //         MaterialPageRoute(
+                    //           builder: (context) => BusScheduleScreen(),
+                    //         ),
+                    //       );
+                    //     },
+                    //     icon: const Icon(Icons.search),
+                    //     label: const Text("Find Schedules"),
+                    //     style: ElevatedButton.styleFrom(
+                    //       padding: const EdgeInsets.symmetric(vertical: 18),
+                    //       backgroundColor: Colors.tealAccent.shade700
+                    //           .withOpacity(0.9),
+                    //       textStyle: TextStyle(
+                    //         decorationColor: AppColors.textColor,
+                    //       ),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(15),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    AppButton(
+                      text: 'Find Schedule',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BusScheduleScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 20)
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -436,7 +462,10 @@ class _HomeTabState extends State<HomeTab>
             child: Text(
               value,
               style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white,
+              ),
             ),
           ),
           const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white70),

@@ -2,44 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import 'package:nutt/login.dart';
+
 void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: LoginScreen(), // 🔥 Start from Login Screen
-  ));
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginPage(), // 🔥 Start from Login Screen
+    ),
+  );
 }
 
 // 🔹 Login Screen (Welcome Page)
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+// class LoginScreen extends StatelessWidget {
+//   const LoginScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xff203A43),
-      body: Center(
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.tealAccent.shade700,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            );
-          },
-          child: const Text(
-            "Login",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: const Color(0xff203A43),
+//       body: Center(
+//         child: ElevatedButton(
+//           style: ElevatedButton.styleFrom(
+//             backgroundColor: Colors.tealAccent.shade700,
+//             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+//             shape: RoundedRectangleBorder(
+//               borderRadius: BorderRadius.circular(10),
+//             ),
+//           ),
+//           onPressed: () {
+//             Navigator.pushReplacement(
+//               context,
+//               MaterialPageRoute(builder: (context) => const ProfileScreen()),
+//             );
+//           },
+//           child: const Text(
+//             "Login",
+//             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 // 🔹 Profile Screen
 class ProfileScreen extends StatefulWidget {
@@ -118,20 +123,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToHelpSupport() {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Help & Support clicked")));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Help & Support clicked")));
   }
 
   void _navigateToContactUs() {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Contact Us clicked")));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Contact Us clicked")));
   }
 
   // 🔥 Logout → back to LoginScreen
   void _navigateToLogout() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(builder: (context) => const LoginPage()),
       (route) => false,
     );
   }
@@ -141,11 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xff0F2027),
-            Color(0xff203A43),
-            Color(0xff2C5364),
-          ],
+          colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -156,8 +159,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: Text(
             "Profile",
             style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.tealAccent.shade700.withOpacity(0.9)),
+              fontWeight: FontWeight.bold,
+              color: Colors.tealAccent.shade700.withOpacity(0.9),
+            ),
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -178,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundImage: _image != null
                         ? FileImage(_image!)
                         : const AssetImage("assets/profile.png")
-                            as ImageProvider,
+                              as ImageProvider,
                   ),
                 ),
                 Positioned(
@@ -229,8 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: 5),
-            Text(userEmail,
-                style: const TextStyle(color: Colors.white70)),
+            Text(userEmail, style: const TextStyle(color: Colors.white70)),
 
             const SizedBox(height: 20),
 
@@ -247,12 +250,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget buildTile(String title, IconData icon, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.tealAccent.shade700.withOpacity(0.9)),
-      title: Text(title,
-          style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.tealAccent.shade700.withOpacity(0.9))),
-      trailing:
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.tealAccent.shade700.withOpacity(0.9),
+        ),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.white,
+      ),
       onTap: onTap,
     );
   }
@@ -294,8 +303,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         title: Text(
           "Edit Profile",
           style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.tealAccent.shade700.withOpacity(0.9)),
+            fontWeight: FontWeight.bold,
+            color: Colors.tealAccent.shade700.withOpacity(0.9),
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -316,8 +326,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.tealAccent.shade700,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 50,
+                  vertical: 15,
+                ),
               ),
               onPressed: () {
                 widget.onSave(
@@ -326,21 +338,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   _passwordController.text,
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text("Profile Updated Successfully")),
+                  const SnackBar(content: Text("Profile Updated Successfully")),
                 );
                 Navigator.pop(context);
               },
               child: const Text("Save"),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller,
-      {bool obscure = false}) {
+  Widget buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool obscure = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: obscure,
