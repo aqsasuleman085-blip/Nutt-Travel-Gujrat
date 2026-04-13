@@ -14,6 +14,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
+  final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
+
   final List<Widget> _pages = [
     HomeTab(),
     TicketsScreen(),
@@ -23,53 +25,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: _pages[_currentIndex],
-        bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        selectedItemColor: themeColor,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.confirmation_number),
+            label: "Tickets",
           ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            currentIndex: _currentIndex,
-            onTap: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            selectedItemColor: Colors.tealAccent.shade700.withOpacity(0.9),
-            unselectedItemColor: Colors.white70,
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.confirmation_number),
-                label: "Tickets",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.directions_bus),
-                label: "Buses",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: "Profile",
-              ),
-            ],
+          BottomNavigationBarItem(
+            icon: Icon(Icons.directions_bus),
+            label: "Buses",
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profile",
+          ),
+        ],
       ),
     );
   }
@@ -82,6 +66,8 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
+  final Color themeColor = const Color(0xff10B981);
+
   String fromCity = "Select City";
   String toCity = "Select Destination";
   String date = "Select Date";
@@ -99,38 +85,29 @@ class _HomeTabState extends State<HomeTab> {
   void selectCity(bool isFrom) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          color: Colors.white,
           child: ListView(
             padding: const EdgeInsets.all(10),
             children: cities.map((city) {
               return Card(
-                color: Color(0xff203A43),
+                color: Colors.white,
                 elevation: 2,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListTile(
-                  leading: Icon(
-                    Icons.location_city,
-                    color: Colors.tealAccent.shade700.withOpacity(0.9),
-                  ),
+                  leading: Icon(Icons.location_city, color: themeColor),
                   title: Text(
                     city,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                   onTap: () {
@@ -154,18 +131,6 @@ class _HomeTabState extends State<HomeTab> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            dialogTheme: DialogThemeData(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ),
-          ),
-          child: Center(child: SizedBox(width: 320, child: child!)),
-        );
-      },
     );
 
     if (picked != null) {
@@ -193,126 +158,132 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // 🔹 Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Welcome to",
-                            style: TextStyle(color: Colors.white70, fontSize: 16)),
-                        Text(
-                          "Nutt Travel Gujrat",
-                          style: TextStyle(
-                            color: Colors.tealAccent.shade700.withOpacity(0.9),
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none,
-                          size: 28, color: Colors.white),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProfileScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              // 🔹 Banner (Static now)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.tealAccent.shade700.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.directions_bus,
-                          color: Colors.white, size: 30),
-                      SizedBox(width: 10),
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Welcome to",
+                          style: TextStyle(color: Colors.grey, fontSize: 16)),
                       Text(
-                        "Book Your Bus Now!",
+                        "Nutt Travel Gujrat",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: themeColor,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
                         ),
                       ),
                     ],
                   ),
-                ),
+                  IconButton(
+                    icon: Icon(Icons.notifications_none,
+                        size: 28, color: themeColor),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfileScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
+            ),
 
-              const SizedBox(height: 20),
-
-              // 🔹 Booking Card
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
+            // BANNER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Color(0xff203A43),
+                  color: themeColor,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 10),
-                  ],
                 ),
-                child: Column(
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    GestureDetector(
-                      onTap: () => selectCity(true),
-                      child: buildField(fromCity, Icons.location_on),
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: swapCities,
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundColor:
-                            Colors.tealAccent.shade700.withOpacity(0.9),
-                        child: const Icon(Icons.swap_vert, color: Colors.white),
+                    Icon(Icons.directions_bus, color: Colors.white, size: 30),
+                    SizedBox(width: 10),
+                    Text(
+                      "Book Your Bus Now!",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: () => selectCity(false),
-                      child: buildField(toCity, Icons.flag),
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: selectDate,
-                      child: buildField(date, Icons.calendar_today),
-                    ),
-                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
 
-                    AppButton(
-                      text: 'Find Schedule',
+            const SizedBox(height: 20),
+
+            // BOOKING CARD
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: themeColor.withOpacity(0.3)),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 10),
+                ],
+              ),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => selectCity(true),
+                    child: buildField(fromCity, Icons.location_on),
+                  ),
+                  const SizedBox(height: 10),
+
+                  GestureDetector(
+                    onTap: swapCities,
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: themeColor,
+                      child: const Icon(Icons.swap_vert, color: Colors.white),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  GestureDetector(
+                    onTap: () => selectCity(false),
+                    child: buildField(toCity, Icons.flag),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  GestureDetector(
+                    onTap: selectDate,
+                    child: buildField(date, Icons.calendar_today),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // 🔥 FIND SCHEDULE BUTTON (GREEN FIXED)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeColor, // ✅ GREEN
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -321,14 +292,22 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                         );
                       },
+                      child: const Text(
+                        "Find Schedule",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
-              const SizedBox(height: 20),
-            ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -338,13 +317,13 @@ class _HomeTabState extends State<HomeTab> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Color(0xff2C5364),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.tealAccent.shade700.withOpacity(0.5)),
+        border: Border.all(color: themeColor),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.tealAccent.shade700.withOpacity(0.9)),
+          Icon(icon, color: themeColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -352,12 +331,12 @@ class _HomeTabState extends State<HomeTab> {
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.white,
+                color: Colors.black,
               ),
             ),
           ),
           const Icon(Icons.arrow_forward_ios,
-              size: 16, color: Colors.white70),
+              size: 16, color: Colors.grey),
         ],
       ),
     );

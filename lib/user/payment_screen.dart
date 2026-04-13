@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:nutt/user/colors.dart';
 import 'package:nutt/user/home_screen.dart';
 import 'package:nutt/user/picker.dart';
+
+/// 🎨 THEME COLORS
+const Color emeraldGreen = const Color(0xff10B981);
+const Color softWhite = Colors.white;
 
 class PaymentScreen extends StatefulWidget {
   final String date;
@@ -12,7 +15,7 @@ class PaymentScreen extends StatefulWidget {
   final String fromCity;
   final String gender;
   final int seat;
-  final int fare; // ✅ NEW
+  final int fare;
 
   const PaymentScreen({
     super.key,
@@ -32,8 +35,6 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-
-  final TextEditingController jazzAccountController = TextEditingController();
   final TextEditingController jazzNameController = TextEditingController();
 
   String selectedPayment = "cod";
@@ -41,11 +42,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   File? paymentImage;
   final ImagePicker picker = ImagePicker();
 
-  final Color c1 = const Color(0xff0F2027);
-  final Color c2 = const Color(0xff203A43);
-  final Color c3 = const Color(0xff2C5364);
-
-  // 🔹 IMAGE PICK
+  /// 📸 PICK IMAGE
   Future<void> pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
@@ -55,67 +52,61 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  // 🔹 SUCCESS
+  /// 🎉 SUCCESS POPUP
   void showSuccessPopup() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xff203A43),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        backgroundColor: softWhite,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
         title: const Text(
-          "Congratulations \nYou seat is reserved and will confirmed after your Jazzcash payment verification. 🎉",
-          style: TextStyle(color: Colors.white),
+          "🎉 Seat Reserved",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         content: const Text(
-          "if you choose COD then reconfirm 30 min before departure on station and confirm your payment",
-          style: TextStyle(color: Colors.white70),
+          "Your seat is reserved and will be confirmed after payment verification.",
         ),
         actions: [
-          TextButton(
-            style: TextButton.styleFrom(backgroundColor: Colors.tealAccent),
-            onPressed: () => Navigator.pop(context),
-            child: TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
-                );
-              },
-              child: Text('Ok'),
-            ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: emeraldGreen),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => HomeScreen()),
+              );
+            },
+            child: const Text("OK"),
           ),
         ],
       ),
     );
   }
 
-  // 🔹 CONFIRM
+  /// ❓ CONFIRM POPUP
   void showConfirmPopup() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xff203A43),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text(
-          "Confirmation",
-          style: TextStyle(color: Colors.white),
+        backgroundColor: softWhite,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
         ),
-        content: const Text(
-          "Are you sure to proceed according to entered details?",
-          style: TextStyle(color: Colors.white70),
-        ),
+        title: const Text("Confirmation"),
+        content: const Text("Are you sure to proceed with entered details?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent),
+            style: ElevatedButton.styleFrom(backgroundColor: emeraldGreen),
             onPressed: () {
               Navigator.pop(context);
               showSuccessPopup();
             },
-            child: const Text("Confirm", style: TextStyle(color: Colors.black)),
+            child: const Text("Confirm"),
           ),
         ],
       ),
@@ -124,301 +115,168 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [c1, c2, c3],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Scaffold(
+      backgroundColor: softWhite,
+
+      /// 🟢 APP BAR
+      appBar: AppBar(
+        backgroundColor: emeraldGreen,
+        centerTitle: true,
+        title: const Text(
+          "Payment",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
 
-        // 🔹 SAME HEADER
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          centerTitle: true,
-          title: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Colors.tealAccent, Colors.white],
-            ).createShader(bounds),
-            child: const Text(
-              "Payment",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// 🟢 TRIP CARD
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: emeraldGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: emeraldGreen.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Trip Summary",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  Text("${widget.fromCity} → ${widget.toCity}"),
+                  Text("Date: ${widget.date}"),
+                  Text("Seat: ${widget.seat}"),
+
+                  const Divider(),
+
+                  Text(
+                    "Fare: Rs ${widget.fare}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: emeraldGreen,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ),
 
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🔹 Trip Summary (IMPROVED)
+            const SizedBox(height: 20),
+
+            /// 👤 PASSENGER INFO
+            const Text(
+              "Passenger Info",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 10),
+
+            _input(nameController, "Full Name"),
+            const SizedBox(height: 10),
+            _input(phoneController, "Phone Number"),
+
+            const SizedBox(height: 20),
+
+            /// 💳 PAYMENT METHOD
+            const Text(
+              "Payment Method",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+
+            RadioListTile(
+              activeColor: emeraldGreen,
+              value: "cod",
+              groupValue: selectedPayment,
+              onChanged: (v) {
+                setState(() => selectedPayment = v.toString());
+              },
+              title: const Text("Cash on Delivery"),
+            ),
+
+            RadioListTile(
+              activeColor: emeraldGreen,
+              value: "jazzcash",
+              groupValue: selectedPayment,
+              onChanged: (v) {
+                setState(() => selectedPayment = v.toString());
+              },
+              title: const Text("JazzCash"),
+            ),
+
+            /// 💚 JAZZCASH BOX
+            if (selectedPayment == "jazzcash")
               Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.tealAccent.withOpacity(0.2),
-                      Colors.white.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.tealAccent.withOpacity(0.5)),
-                ),
                 padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: emeraldGreen.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: emeraldGreen.withOpacity(0.3),
+                  ),
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Trip Summary",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    const Text("JazzCash Number: 03001234563"),
+                    const SizedBox(height: 10),
 
-                    const SizedBox(height: 12),
+                    _input(jazzNameController, "Account Holder Name"),
 
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.directions_bus,
-                          color: Colors.tealAccent,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "${widget.fromCity} → ${widget.toCity}",
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 10),
 
-                    const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today,
-                          color: Colors.tealAccent,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Date: ${widget.date}",
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-                        const Icon(Icons.event_seat, color: Colors.tealAccent),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Seat: ${widget.seat}",
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-
-                    const Divider(color: Colors.white24),
-
-                    // ✅ FARE ADDED
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.attach_money,
-                          color: Colors.tealAccent,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Fare: Rs ${widget.fare}",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+                    ScreenshotPicker(),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 30),
 
-              // 🔹 Passenger Info (SAME)
-              const Text(
-                "Passenger Info",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: nameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "Full Name",
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.08),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: phoneController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "Phone Number",
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.08),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // 🔹 Payment Method (SAME)
-              const Text(
-                "Payment Method",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              RadioListTile(
-                activeColor: Colors.tealAccent,
-                value: "cod",
-                groupValue: selectedPayment,
-                onChanged: (value) {
-                  setState(() {
-                    selectedPayment = value.toString();
-                  });
-                },
-                title: const Text(
-                  "Cash on Delivery",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              RadioListTile(
-                activeColor: Colors.tealAccent,
-                value: "jazzcash",
-                groupValue: selectedPayment,
-                onChanged: (value) {
-                  setState(() {
-                    selectedPayment = value.toString();
-                  });
-                },
-                title: const Text(
-                  "JazzCash",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              // 🔥 JAZZCASH UI (IMPROVED DESIGN)
-              if (selectedPayment == "jazzcash") ...[
-                const SizedBox(height: 15),
-
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+            /// 🔘 BUTTON
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: emeraldGreen,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.tealAccent.withOpacity(0.4),
-                    ),
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'JazzCash Account Number',
-                        style: TextStyle(color: AppColors.textColor),
-                      ),
-                      Text(
-                        '03001234563',
-                        style: TextStyle(color: AppColors.textColor),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      TextField(
-                        controller: jazzNameController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: "Account Holder Name",
-                          hintStyle: TextStyle(color: Colors.white54),
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-                      ScreenshotPicker(),
-                    ],
                   ),
                 ),
-              ],
-
-              const SizedBox(height: 30),
-
-              // 🔹 BUTTON (SAME STYLE)
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () {
-                    showConfirmPopup();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.tealAccent.shade700.withOpacity(
-                      0.9,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Submit",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
+                onPressed: showConfirmPopup,
+                child: const Text(
+                  "Submit",
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🔧 INPUT WIDGET
+  Widget _input(TextEditingController c, String hint) {
+    return TextField(
+      controller: c,
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: emeraldGreen),
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
     );

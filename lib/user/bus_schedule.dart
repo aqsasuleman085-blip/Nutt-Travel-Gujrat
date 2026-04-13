@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nutt/user/colors.dart';
 import 'package:nutt/user/seats_selection.dart';
 
 class BusScheduleScreen extends StatefulWidget {
@@ -11,12 +10,13 @@ class BusScheduleScreen extends StatefulWidget {
 class _BusScheduleScreenState extends State<BusScheduleScreen> {
   int selectedIndex = 0;
 
+  final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
+
   List<DateTime> dates = List.generate(
     7,
     (index) => DateTime.now().add(Duration(days: index)),
   );
 
-  // Dummy Data
   Map<String, List<Map<String, dynamic>>> busData = {
     "0": [
       {
@@ -54,21 +54,36 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
     List buses = busData[key] ?? [];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
+
       appBar: AppBar(
-        title: Text("Bus Schedule"),
+        title: Text(
+          "Bus Schedule",
+          style: TextStyle(
+            color: themeColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: IconThemeData(color: themeColor),
       ),
+
       body: Column(
         children: [
           _buildDateSelector(),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Expanded(
             child: buses.isEmpty
-                ? Center(child: Text("No buses available"))
+                ? const Center(
+                    child: Text(
+                      "No buses available",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
                 : ListView.builder(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     itemCount: buses.length,
                     itemBuilder: (context, index) {
                       return _buildBusCard(buses[index]);
@@ -84,7 +99,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
   Widget _buildDateSelector() {
     return Container(
       height: 90,
-      padding: EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: dates.length,
@@ -93,14 +108,21 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
           bool isSelected = selectedIndex == index;
 
           return GestureDetector(
-            onTap: () {},
+            onTap: () {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
             child: Container(
               width: 70,
-              margin: EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue : Colors.white,
+                color: isSelected ? themeColor : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+                border: Border.all(color: themeColor),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 5),
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -112,7 +134,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
                     DateFormat('dd').format(date),
                     style: TextStyle(
@@ -138,21 +160,22 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => SeatSelectionScreen(
-              date: String.fromCharCode(12),
-              fromCity: 'Guj',
-              time: String.fromCharCode(3),
-              toCity: 'Fas',
+              date: "Selected",
+              fromCity: "Guj",
+              time: bus["time"],
+              toCity: "Fas",
             ),
           ),
         );
       },
       child: Container(
-        margin: EdgeInsets.only(bottom: 15),
-        padding: EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
+          border: Border.all(color: themeColor.withOpacity(0.3)),
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 8,
@@ -169,28 +192,36 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
               children: [
                 Text(
                   bus["time"],
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
                 Text(
                   "Rs ${bus["price"]}",
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.green,
+                    color: themeColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Route
             Text(
               bus["route"],
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
             ),
 
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Info Row
             Row(
@@ -207,13 +238,16 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
     );
   }
 
-  // 🔹 SMALL INFO CHIP
+  // 🔹 INFO CHIP
   Widget _infoChip(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.blue),
-        SizedBox(width: 5),
-        Text(text, style: TextStyle(fontSize: 13)),
+        Icon(icon, size: 16, color: themeColor),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 13, color: Colors.black87),
+        ),
       ],
     );
   }

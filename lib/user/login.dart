@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:nutt/admin/dashboard.dart';
-import 'package:nutt/user/button.dart';
 import 'home_screen.dart';
+import 'signup.dart';
 
 class UserLogin extends StatefulWidget {
   const UserLogin({super.key});
@@ -16,6 +14,8 @@ class _LoginPageState extends State<UserLogin>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  final Color themeColor = const Color(0xff10B981); // 🔵 Nice blue
 
   @override
   void initState() {
@@ -50,145 +50,146 @@ class _LoginPageState extends State<UserLogin>
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Expanded(
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: <Widget>[
-                          // Title Section
-                          Column(
-                            children: <Widget>[
-                              const Text(
+      backgroundColor: Colors.white, // ✅ White Background
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        // Title Section
+                        Column(
+                          children: <Widget>[
+                            Text(
+                              "Login",
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                color: themeColor,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              "Login to your account",
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Input Fields
+                        Column(
+                          children: <Widget>[
+                            inputFile(
+                              label: "Email",
+                              icon: Icons.email_outlined,
+                              color: themeColor,
+                            ),
+                            const SizedBox(height: 10),
+                            PasswordInputField(
+                              label: "Password",
+                              color: themeColor,
+                            ),
+                          ],
+                        ),
+
+                        // Login Button
+                        GestureDetector(
+                          onTapDown: (_) {
+                            setState(() => _isButtonPressed = true);
+                          },
+                          onTapUp: (_) {
+                            setState(() => _isButtonPressed = false);
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HomeScreen(),
+                              ),
+                            );
+                          },
+                          onTapCancel: () {
+                            setState(() => _isButtonPressed = false);
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            transform: Matrix4.identity()
+                              ..scale(_isButtonPressed ? 0.95 : 1.0),
+                            height: 60,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: themeColor, // ✅ Button Color
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: const Center(
+                              child: Text(
                                 "Login",
                                 style: TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
                                   color: Colors.white,
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              Text(
-                                "Login to your account",
+                            ),
+                          ),
+                        ),
+
+                        // Signup Text
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            const Text(
+                              "Don't have an account?",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                // ✅ Navigation added
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SignupPage(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                " Sign up",
                                 style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Input Fields
-                          Column(
-                            children: <Widget>[
-                              inputFile(
-                                label: "Email",
-                                icon: Icons.email_outlined,
-                              ),
-                              const SizedBox(height: 10),
-                              const PasswordInputField(label: "Password"),
-                            ],
-                          ),
-                          // Login Button with animation
-                          GestureDetector(
-                            onTapDown: (_) {
-                              setState(() => _isButtonPressed = true);
-                            },
-                            onTapUp: (_) {
-                              setState(() => _isButtonPressed = false);
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HomeScreen(),
-                                ),
-                              );
-                            },
-                            onTapCancel: () {
-                              setState(() => _isButtonPressed = false);
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              transform: Matrix4.identity()
-                                ..scale(_isButtonPressed ? 0.95 : 1.0),
-                              height: 60,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.tealAccent.shade700.withOpacity(
-                                  0.9,
-                                ),
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  "Login",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                  color: themeColor,
                                 ),
                               ),
                             ),
-                          ),
+                          ],
+                        ),
 
-                          // Signup Text
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              const Text(
-                                "Don't have an account?",
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  // Navigate to signup if needed
-                                },
-                                child: const Text(
-                                  " Sign up",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Bottom Image
-                          Container(
-                            margin: const EdgeInsets.only(top: 50),
-                            height: 200,
-                            decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage("assets/background.jpeg"),
-                                fit: BoxFit.fitHeight,
-                              ),
+                        // Bottom Image
+                        Container(
+                          margin: const EdgeInsets.only(top: 50),
+                          height: 200,
+                          decoration: const BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage("assets/background.jpeg"),
+                              fit: BoxFit.fitHeight,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -196,49 +197,54 @@ class _LoginPageState extends State<UserLogin>
   }
 }
 
-// Email Input Field with icon
-Widget inputFile({required String label, IconData? icon}) {
+// Email Input Field
+Widget inputFile({
+  required String label,
+  IconData? icon,
+  required Color color,
+}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
       Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
-          color: Colors.white,
+          color: color,
         ),
       ),
       const SizedBox(height: 5),
       TextField(
         decoration: InputDecoration(
-          prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 0,
-            horizontal: 10,
-          ),
+          prefixIcon: icon != null ? Icon(icon, color: color) : null,
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white70),
+            borderSide: BorderSide(color: color),
           ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: color),
           ),
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white70),
+            borderSide: BorderSide(color: color),
           ),
-          hintStyle: const TextStyle(color: Colors.white54),
         ),
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black),
       ),
       const SizedBox(height: 10),
     ],
   );
 }
 
-// Password Input Field with lock + eye toggle
+// Password Input Field
 class PasswordInputField extends StatefulWidget {
   final String label;
-  const PasswordInputField({super.key, required this.label});
+  final Color color;
+
+  const PasswordInputField({
+    super.key,
+    required this.label,
+    required this.color,
+  });
 
   @override
   State<PasswordInputField> createState() => _PasswordInputFieldState();
@@ -254,21 +260,21 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
       children: [
         Text(
           widget.label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w400,
-            color: Colors.white,
+            color: widget.color,
           ),
         ),
         const SizedBox(height: 5),
         TextField(
           obscureText: _obscureText,
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+            prefixIcon: Icon(Icons.lock_outline, color: widget.color),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.white70,
+                color: widget.color,
               ),
               onPressed: () {
                 setState(() {
@@ -276,22 +282,17 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
                 });
               },
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 0,
-              horizontal: 10,
-            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white70),
+              borderSide: BorderSide(color: widget.color),
             ),
-            focusedBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: widget.color),
             ),
             border: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white70),
+              borderSide: BorderSide(color: widget.color),
             ),
-            hintStyle: const TextStyle(color: Colors.white54),
           ),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.black),
         ),
         const SizedBox(height: 10),
       ],
