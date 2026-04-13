@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/bus_schedule.dart';
-import 'package:nutt/buses_screen.dart';
-import 'package:nutt/button.dart';
-import 'package:nutt/colors.dart';
-import 'package:nutt/profile_screen.dart';
-import 'package:nutt/tickets_screen.dart';
+import 'package:nutt/user/bus_schedule.dart';
+import 'package:nutt/user/buses_screen.dart';
+import 'package:nutt/user/button.dart';
+import 'package:nutt/user/profile_screen.dart';
+import 'package:nutt/user/tickets_screen.dart';
 
 // 🔹 MAIN HOME SCREEN
 class HomeScreen extends StatefulWidget {
@@ -12,12 +11,8 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-
-  late AnimationController _controller;
-  late Animation<double> _animation;
 
   final List<Widget> _pages = [
     HomeTab(),
@@ -25,25 +20,6 @@ class _HomeScreenState extends State<HomeScreen>
     BusesScreen(),
     ProfileScreen(),
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 2),
-    )..repeat(reverse: true);
-    _animation = Tween<double>(
-      begin: 0,
-      end: 20,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +81,7 @@ class HomeTab extends StatefulWidget {
   _HomeTabState createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
+class _HomeTabState extends State<HomeTab> {
   String fromCity = "Select City";
   String toCity = "Select Destination";
   String date = "Select Date";
@@ -119,28 +95,6 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     "Sialkot",
     "Abbottabad",
   ];
-
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 2),
-    )..repeat(reverse: true);
-    _animation = Tween<double>(
-      begin: 0,
-      end: 20,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   void selectCity(bool isFrom) {
     showModalBottomSheet(
@@ -223,18 +177,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   String _monthName(int m) {
     const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec",
     ];
     return months[m - 1];
   }
@@ -263,20 +207,15 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
             children: [
               // 🔹 Header
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Welcome to",
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
+                        Text("Welcome to",
+                            style: TextStyle(color: Colors.white70, fontSize: 16)),
                         Text(
                           "Nutt Travel Gujrat",
                           style: TextStyle(
@@ -288,11 +227,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.notifications_none,
-                        size: 28,
-                        color: Colors.white,
-                      ),
+                      icon: const Icon(Icons.notifications_none,
+                          size: 28, color: Colors.white),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -306,42 +242,31 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                 ),
               ),
 
-              // 🔹 Banner
+              // 🔹 Banner (Static now)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: AnimatedBuilder(
-                  animation: _animation,
-                  builder: (context, child) {
-                    return Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.tealAccent.shade700.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.tealAccent.shade700.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.directions_bus,
+                          color: Colors.white, size: 30),
+                      SizedBox(width: 10),
+                      Text(
+                        "Book Your Bus Now!",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Transform.translate(
-                            offset: Offset(_animation.value, 0),
-                            child: const Icon(
-                              Icons.directions_bus,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            "Book Your Bus Now!",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
 
@@ -369,9 +294,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       onTap: swapCities,
                       child: CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.tealAccent.shade700.withOpacity(
-                          0.9,
-                        ),
+                        backgroundColor:
+                            Colors.tealAccent.shade700.withOpacity(0.9),
                         child: const Icon(Icons.swap_vert, color: Colors.white),
                       ),
                     ),
@@ -386,43 +310,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       child: buildField(date, Icons.calendar_today),
                     ),
                     const SizedBox(height: 20),
-                    // SizedBox(
-                    //   width: double.infinity,
-                    //   child: ElevatedButton.icon(
-                    //     onPressed: () {
-                    //       // if (fromCity == "Select City" ||
-                    //       //     toCity == "Select Destination" ||
-                    //       //     date == "Select Date") {
-                    //       //   ScaffoldMessenger.of(context).showSnackBar(
-                    //       //     const SnackBar(
-                    //       //       content: Text("Please fill all fields"),
-                    //       //     ),
-                    //       //   );
-                    //       //   return;
-                    //       // }
 
-                    //       Navigator.push(
-                    //         context,
-                    //         MaterialPageRoute(
-                    //           builder: (context) => BusScheduleScreen(),
-                    //         ),
-                    //       );
-                    //     },
-                    //     icon: const Icon(Icons.search),
-                    //     label: const Text("Find Schedules"),
-                    //     style: ElevatedButton.styleFrom(
-                    //       padding: const EdgeInsets.symmetric(vertical: 18),
-                    //       backgroundColor: Colors.tealAccent.shade700
-                    //           .withOpacity(0.9),
-                    //       textStyle: TextStyle(
-                    //         decorationColor: AppColors.textColor,
-                    //       ),
-                    //       shape: RoundedRectangleBorder(
-                    //         borderRadius: BorderRadius.circular(15),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                     AppButton(
                       text: 'Find Schedule',
                       onPressed: () {
@@ -468,7 +356,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white70),
+          const Icon(Icons.arrow_forward_ios,
+              size: 16, color: Colors.white70),
         ],
       ),
     );

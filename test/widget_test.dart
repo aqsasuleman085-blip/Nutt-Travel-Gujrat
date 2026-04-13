@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nutt/login.dart';
+import 'package:nutt/user/login.dart';
 
 import 'package:nutt/main.dart';
 

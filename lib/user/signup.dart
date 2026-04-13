@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nutt/home_screen.dart';
+import 'package:nutt/user/home_screen.dart';
 import 'login.dart';
 
 class SignupPage extends StatefulWidget {
@@ -22,14 +22,20 @@ class _SignupPageState extends State<SignupPage>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
 
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.forward();
   }
@@ -47,11 +53,7 @@ class _SignupPageState extends State<SignupPage>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xff0F2027),
-              Color(0xff203A43),
-              Color(0xff2C5364),
-            ],
+            colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -72,17 +74,15 @@ class _SignupPageState extends State<SignupPage>
                         const Text(
                           "Sign up",
                           style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         Text(
                           "Create an account, It's free",
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.white70,
-                          ),
+                          style: TextStyle(fontSize: 15, color: Colors.white70),
                         ),
                       ],
                     ),
@@ -97,9 +97,12 @@ class _SignupPageState extends State<SignupPage>
                           icon: Icons.lock,
                           obscureText: _obscurePassword,
                           suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility, color: Colors.white70),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.white70,
+                            ),
                             onPressed: () {
                               setState(() {
                                 _obscurePassword = !_obscurePassword;
@@ -112,12 +115,16 @@ class _SignupPageState extends State<SignupPage>
                           icon: Icons.lock,
                           obscureText: _obscureConfirmPassword,
                           suffixIcon: IconButton(
-                            icon: Icon(_obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility, color: Colors.white70),
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.white70,
+                            ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -176,7 +183,8 @@ class _SignupPageState extends State<SignupPage>
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const LoginPage()),
+                                builder: (context) => const UserLogin(),
+                              ),
                             );
                           },
                           child: const Text(
@@ -187,7 +195,7 @@ class _SignupPageState extends State<SignupPage>
                               color: Colors.white,
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ],
@@ -224,8 +232,10 @@ class _SignupPageState extends State<SignupPage>
           decoration: InputDecoration(
             prefixIcon: icon != null ? Icon(icon, color: Colors.white70) : null,
             suffixIcon: suffixIcon,
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 0,
+              horizontal: 10,
+            ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.white70),
             ),

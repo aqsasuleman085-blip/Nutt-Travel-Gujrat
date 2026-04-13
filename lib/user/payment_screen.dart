@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:nutt/colors.dart';
-import 'package:nutt/home_screen.dart';
-import 'package:nutt/picker.dart';
+import 'package:nutt/user/colors.dart';
+import 'package:nutt/user/home_screen.dart';
+import 'package:nutt/user/picker.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String date;
@@ -362,16 +362,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                   child: Column(
                     children: [
-                      // TextField(
-                      //   controller: jazzAccountController,
-                      //   style:
-                      //       const TextStyle(color: Colors.white),
-                      //   decoration: const InputDecoration(
-                      //     hintText: "JazzCash Account Number",
-                      //     hintStyle:
-                      //         TextStyle(color: Colors.white54),
-                      //   ),
-                      // ),
                       Text(
                         'JazzCash Account Number',
                         style: TextStyle(color: AppColors.textColor),

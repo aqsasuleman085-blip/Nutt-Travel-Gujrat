@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/payment_screen.dart';
-import 'package:nutt/seat_selection_screen.dart';
+import 'package:nutt/user/payment_screen.dart';
+import 'package:nutt/user/seat_selection_screen.dart';
 
 /// 🔥 SEAT SCREEN (SAME AS YOUR CODE)
 class SeatSelectionScreen extends StatefulWidget {

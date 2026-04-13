@@ -1,50 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
-import 'package:nutt/login.dart';
-
-void main() {
-  runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginPage(), // 🔥 Start from Login Screen
-    ),
-  );
-}
-
-// 🔹 Login Screen (Welcome Page)
-// class LoginScreen extends StatelessWidget {
-//   const LoginScreen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: const Color(0xff203A43),
-//       body: Center(
-//         child: ElevatedButton(
-//           style: ElevatedButton.styleFrom(
-//             backgroundColor: Colors.tealAccent.shade700,
-//             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-//             shape: RoundedRectangleBorder(
-//               borderRadius: BorderRadius.circular(10),
-//             ),
-//           ),
-//           onPressed: () {
-//             Navigator.pushReplacement(
-//               context,
-//               MaterialPageRoute(builder: (context) => const ProfileScreen()),
-//             );
-//           },
-//           child: const Text(
-//             "Login",
-//             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+import 'package:nutt/user/login.dart';
 
 // 🔹 Profile Screen
 class ProfileScreen extends StatefulWidget {
@@ -138,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _navigateToLogout() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
+      MaterialPageRoute(builder: (context) => const UserLogin()),
       (route) => false,
     );
   }
@@ -181,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: 50,
                     backgroundImage: _image != null
                         ? FileImage(_image!)
-                        : const AssetImage("assets/profile.png")
+                        : const AssetImage("assets/background.jpeg")
                               as ImageProvider,
                   ),
                 ),

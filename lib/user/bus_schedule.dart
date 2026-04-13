@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nutt/colors.dart';
-import 'package:nutt/seats_selection.dart';
+import 'package:nutt/user/colors.dart';
+import 'package:nutt/user/seats_selection.dart';
 
 class BusScheduleScreen extends StatefulWidget {
   @override

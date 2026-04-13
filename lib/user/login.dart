@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nutt/admin/dashboard.dart';
+import 'package:nutt/user/button.dart';
 import 'home_screen.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class UserLogin extends StatefulWidget {
+  const UserLogin({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<UserLogin> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
+class _LoginPageState extends State<UserLogin>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -103,7 +105,6 @@ class _LoginPageState extends State<LoginPage>
                               const PasswordInputField(label: "Password"),
                             ],
                           ),
-
                           // Login Button with animation
                           GestureDetector(
                             onTapDown: (_) {

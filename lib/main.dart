@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/buses_screen.dart';
-import 'package:nutt/login.dart';
-import 'package:nutt/profile_screen.dart';
-import 'package:nutt/signup.dart';
-import 'package:nutt/home_screen.dart';
+import 'package:nutt/admin/dashboard.dart';
+import 'package:nutt/user/buses_screen.dart';
+import 'package:nutt/user/button.dart';
+import 'package:nutt/user/login.dart';
+import 'package:nutt/user/profile_screen.dart';
+import 'package:nutt/user/signup.dart';
+import 'package:nutt/user/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,11 +40,7 @@ class HomePage extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xff0F2027),
-              Color(0xff203A43),
-              Color(0xff2C5364),
-            ],
+            colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -79,6 +77,18 @@ class HomePage extends StatelessWidget {
                 // 🔹 Buttons
                 Column(
                   children: [
+                    AppButton(
+                      text: 'Admin',
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AdminDashboard(),
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(height: 12),
                     // 🔹 Login Button
                     MaterialButton(
                       minWidth: double.infinity,
@@ -86,8 +96,7 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => LoginPage()),
+                          MaterialPageRoute(builder: (context) => UserLogin()),
                         );
                       },
                       shape: RoundedRectangleBorder(
@@ -110,8 +119,7 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => SignupPage()),
+                          MaterialPageRoute(builder: (context) => SignupPage()),
                         );
                       },
                       shape: RoundedRectangleBorder(
