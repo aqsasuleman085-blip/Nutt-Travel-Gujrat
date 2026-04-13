@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/admin_side/providers/auth_provider.dart';
-import 'package:nutt/admin_side/providers/booking_provider.dart';
-import 'package:nutt/admin_side/widgets/custom_text_field.dart';
-import 'package:nutt/admin_side/widgets/loading_widget.dart';
-import 'package:provider/provider.dart';
-import 'tickets_screen.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:nutt/user/colors.dart';
+import 'package:nutt/user/home_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
-  final String busId;
-  final String busFrom;
-  final String busTo;
-  final String departureTime;
   final String date;
+  final String time;
+  final String toCity;
+  final String fromCity;
+  final int seat;
   final int fare;
 
   const PaymentScreen({
     super.key,
-    required this.busId,
-    required this.busFrom,
-    required this.busTo,
-    required this.departureTime,
     required this.date,
+    required this.time,
+    required this.toCity,
+    required this.fromCity,
+    required this.seat,
     required this.fare,
   });
 
@@ -29,339 +27,303 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _cnicController = TextEditingController();
-  final _paymentMethodController = TextEditingController(text: 'Credit Card');
-  final _cardNumberController = TextEditingController();
-  final _cardExpiryController = TextEditingController();
-  final _cardCvvController = TextEditingController();
-  
-  bool _isProcessing = false;
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController jazzNameController = TextEditingController();
+  final Color primaryGreen = AppColors.primary;
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _cnicController.dispose();
-    _paymentMethodController.dispose();
-    _cardNumberController.dispose();
-    _cardExpiryController.dispose();
-    _cardCvvController.dispose();
-    super.dispose();
+  String selectedPayment = "cod"; // "cod" or "jazzcash"
+  File? paymentScreenshot;
+  final ImagePicker picker = ImagePicker();
+
+  bool get isSubmitEnabled {
+    if (nameController.text.trim().isEmpty ||
+        phoneController.text.trim().isEmpty) {
+      return false;
+    }
+    if (selectedPayment == "jazzcash") {
+      return paymentScreenshot != null &&
+          jazzNameController.text.trim().isNotEmpty;
+    }
+    return true;
+  }
+
+  Future<void> pickScreenshot() async {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        paymentScreenshot = File(picked.path);
+      });
+    }
+  }
+
+  void showSuccessPopup() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text(
+          "🎉 Booking Submitted",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          "Your booking request has been sent. You will be notified once approved.",
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => HomeScreen()),
+              );
+            },
+            child: const Text("OK", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showConfirmPopup() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text("Confirm Booking"),
+        content: const Text("Are you sure you want to proceed?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
+            onPressed: () {
+              Navigator.pop(context);
+              // Here you would call your booking provider
+              // For now, just show success
+              showSuccessPopup();
+            },
+            child: const Text("Confirm", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-          "Payment Details",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: themeColor,
-          ),
-        ),
+        backgroundColor: primaryGreen,
+        title: const Text("Payment", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: themeColor),
       ),
-      body: _isProcessing
-          ? const LoadingWidget(message: 'Processing payment...')
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Booking Summary
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Booking Summary",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: themeColor,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildSummaryRow("Route", "${widget.busFrom} → ${widget.busTo}"),
-                          _buildSummaryRow("Date", widget.date),
-                          _buildSummaryRow("Departure Time", widget.departureTime),
-                          _buildSummaryRow("Fare", "Rs ${widget.fare}"),
-                        ],
-                      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Trip Summary Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: primaryGreen.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Trip Summary",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text("${widget.fromCity} → ${widget.toCity}"),
+                  Text("Date: ${widget.date}"),
+                  Text("Time: ${widget.time}"),
+                  Text("Seat: ${widget.seat}"),
+                  const Divider(),
+                  Text(
+                    "Fare: Rs ${widget.fare}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryGreen,
                     ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Personal Information
-                    Text(
-                      "Personal Information",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: themeColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    CustomTextField(
-                      label: "Full Name",
-                      controller: _nameController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your full name';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    CustomTextField(
-                      label: "Email",
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    CustomTextField(
-                      label: "Phone Number",
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    CustomTextField(
-                      label: "CNIC",
-                      controller: _cnicController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your CNIC';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Payment Information
-                    Text(
-                      "Payment Information",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: themeColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: "Payment Method",
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-                      ),
-                      value: _paymentMethodController.text,
-                      items: const [
-                        DropdownMenuItem(value: "Credit Card", child: Text("Credit Card")),
-                        DropdownMenuItem(value: "Debit Card", child: Text("Debit Card")),
-                        DropdownMenuItem(value: "JazzCash", child: Text("JazzCash")),
-                        DropdownMenuItem(value: "EasyPaisa", child: Text("EasyPaisa")),
-                        DropdownMenuItem(value: "Bank Transfer", child: Text("Bank Transfer")),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _paymentMethodController.text = value!;
-                        });
-                      },
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    if (_paymentMethodController.text == "Credit Card" || 
-                        _paymentMethodController.text == "Debit Card") ...[
-                      CustomTextField(
-                        label: "Card Number",
-                        controller: _cardNumberController,
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your card number';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              label: "Expiry (MM/YY)",
-                              controller: _cardExpiryController,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              label: "CVV",
-                              controller: _cardCvvController,
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Pay Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: themeColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            setState(() {
-                              _isProcessing = true;
-                            });
-                            
-                            // Simulate payment processing
-                            await Future.delayed(const Duration(seconds: 2));
-                            
-                            // Create booking request
-                            final bookingProvider = Provider.of<BookingProvider>(context, listen: false);
-                            await bookingProvider.addBooking(
-                              userName: _nameController.text,
-                              userEmail: _emailController.text,
-                              busId: widget.busId,
-                              busFrom: widget.busFrom,
-                              busTo: widget.busTo,
-                              price: widget.fare.toDouble(),
-                            );
-                            
-                            // Add notification for admin
-                            // This would be handled by the booking provider in a real app
-                            
-                            setState(() {
-                              _isProcessing = false;
-                            });
-                            
-                            if (mounted) {
-                              // Navigate to tickets screen
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (context) => const TicketsScreen(),
-                                ),
-                              );
-                              
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Booking request submitted! Awaiting admin approval.'),
-                                  backgroundColor: Colors.green,
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        child: _isProcessing
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                "Pay Now",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Passenger Info
+            const Text(
+              "Passenger Info",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: "Full Name",
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: primaryGreen),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
-    );
-  }
+            const SizedBox(height: 10),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                hintText: "Phone Number",
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: primaryGreen),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
-  Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey.shade600,
+            // Payment Method
+            const Text(
+              "Payment Method",
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
+            RadioListTile(
+              activeColor: primaryGreen,
+              value: "cod",
+              groupValue: selectedPayment,
+              onChanged: (val) {
+                setState(() {
+                  selectedPayment = val.toString();
+                });
+              },
+              title: const Text("Cash on Delivery"),
             ),
-          ),
-        ],
+            RadioListTile(
+              activeColor: primaryGreen,
+              value: "jazzcash",
+              groupValue: selectedPayment,
+              onChanged: (val) {
+                setState(() {
+                  selectedPayment = val.toString();
+                });
+              },
+              title: const Text("JazzCash"),
+            ),
+
+            // JazzCash details
+            if (selectedPayment == "jazzcash")
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: primaryGreen.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: primaryGreen.withOpacity(0.3)),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      "JazzCash Number: 03001234563",
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: jazzNameController,
+                      decoration: InputDecoration(
+                        hintText: "Account Holder Name",
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: pickScreenshot,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: primaryGreen),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              paymentScreenshot == null
+                                  ? Icons.camera_alt
+                                  : Icons.check_circle,
+                              color: primaryGreen,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              paymentScreenshot == null
+                                  ? "Attach Screenshot"
+                                  : "Screenshot Attached",
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (paymentScreenshot != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          paymentScreenshot!.path.split('/').last,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 30),
+
+            // Submit Button (disabled until valid)
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryGreen,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  disabledBackgroundColor: Colors.grey.shade300,
+                ),
+                onPressed: isSubmitEnabled ? showConfirmPopup : null,
+                child: const Text(
+                  "Submit",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

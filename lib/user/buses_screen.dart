@@ -107,10 +107,11 @@ class BusesScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => PaymentScreen(
                               date: "10 Apr 2026",
-                              busFrom: "City A",
-                              busTo: "City B",
-                              busId: '${index + 1}',
-                              departureTime: bus["time"]!,
+                              fromCity: 'jas',
+                              seat: 12,
+                              time: 'sdf',
+                              toCity: 'Jallalpur',
+
                               fare: int.parse(bus["price"]!),
                             ),
                           ),

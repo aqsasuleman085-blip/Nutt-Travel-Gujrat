@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // / 🔹 WELCOME SCREEN (WHITE + EMERALD)
 class WelcomeScreen extends StatelessWidget {
-
   const WelcomeScreen({super.key});
 
   @override
@@ -62,8 +61,7 @@ class WelcomeScreen extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                AdminLoginScreen(),
+                            builder: (context) => AdminLoginScreen(),
                           ),
                         );
                       },
@@ -80,32 +78,6 @@ class WelcomeScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 55,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: emeraldGreen),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => UserLogin()),
-                        );
-                      },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(color: emeraldGreen),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  /// 🔹 SIGNUP BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: emeraldGreen,
@@ -114,17 +86,19 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => SignupPage()),
+                          MaterialPageRoute(builder: (context) => UserLogin()),
                         );
                       },
                       child: const Text(
-                        "Sign Up",
+                        "User",
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 12),
                 ],
               ),
             ],

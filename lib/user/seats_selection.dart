@@ -216,12 +216,13 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => PaymentScreen(
-                              date: widget.date,
-                              fare: 12,
-                              busId: '',
-                              busFrom: '',
-                              busTo: '',
-                              departureTime: '',
+                              date: "10 Apr 2026",
+                              fromCity: 'jas',
+                              seat: 12,
+                              time: 'sdf',
+                              toCity: 'Jallalpur',
+
+                              fare: 23,
                             ),
                           ),
                         );
