@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/admin/dashboard.dart';
+import 'package:nutt/admin_side/admin_side.dart';
+import 'package:nutt/admin_side/providers/auth_provider.dart';
+import 'package:nutt/admin_side/screens/home_screen.dart';
 import 'package:nutt/widgets/textfield.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminLoginScreen extends StatefulWidget {
-  const AdminLoginScreen({super.key});
+  // final SharedPreferences prefs;
+  const AdminLoginScreen({super.key,});
 
   @override
   State<AdminLoginScreen> createState() => _LoginPageState();
@@ -14,8 +19,34 @@ class _LoginPageState extends State<AdminLoginScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
   final Color themeColor = const Color(0xff10B981); // 🔵 Nice blue
+  Future<void> _login() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await auth.login(
+      emailController.text.trim(),
+      passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Invalid email or password"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -42,6 +73,8 @@ class _LoginPageState extends State<AdminLoginScreen>
   void dispose() {
     _controller.dispose();
     super.dispose();
+    emailController.dispose();
+    passwordController.dispose();
   }
 
   bool _isButtonPressed = false;
@@ -117,6 +150,8 @@ class _LoginPageState extends State<AdminLoginScreen>
 
                         // Login Button
                         GestureDetector(
+                          // when user press login than it checks authentication and then navigate to dashboard otherise it shows error message
+                          onTap: () {},
                           onTapDown: (_) {
                             setState(() => _isButtonPressed = true);
                           },
@@ -125,7 +160,8 @@ class _LoginPageState extends State<AdminLoginScreen>
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AdminDashboard(),
+                                builder: (context) =>
+                                    AdminSide(),
                               ),
                             );
                           },

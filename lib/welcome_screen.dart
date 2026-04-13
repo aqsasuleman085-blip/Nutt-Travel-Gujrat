@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/admin/admin_login_screen.dart';
-import 'package:nutt/admin/dashboard.dart';
-import 'package:nutt/main.dart';
 import 'package:nutt/user/login.dart';
+import 'package:nutt/user/seats_selection.dart';
 import 'package:nutt/user/signup.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // / 🔹 WELCOME SCREEN (WHITE + EMERALD)
 class WelcomeScreen extends StatelessWidget {
+
   const WelcomeScreen({super.key});
 
   @override
@@ -61,7 +62,8 @@ class WelcomeScreen extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AdminLoginScreen(),
+                            builder: (context) =>
+                                AdminLoginScreen(),
                           ),
                         );
                       },

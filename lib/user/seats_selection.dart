@@ -38,10 +38,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         elevation: 0,
         title: const Text(
           "Seat Selection",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
       ),
@@ -70,10 +67,14 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                         color: Colors.black87,
                       ),
                     ),
-                    Text("Time: ${widget.time}",
-                        style: const TextStyle(color: Colors.black54)),
-                    Text("Date: ${widget.date}",
-                        style: const TextStyle(color: Colors.black54)),
+                    Text(
+                      "Time: ${widget.time}",
+                      style: const TextStyle(color: Colors.black54),
+                    ),
+                    Text(
+                      "Date: ${widget.date}",
+                      style: const TextStyle(color: Colors.black54),
+                    ),
                   ],
                 ),
                 const Icon(Icons.directions_bus, color: emeraldGreen),
@@ -215,13 +216,12 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => PaymentScreen(
-                              seat: seat,
-                              gender: selectedGender!,
-                              fromCity: widget.fromCity,
-                              toCity: widget.toCity,
-                              time: widget.time,
                               date: widget.date,
                               fare: 12,
+                              busId: '',
+                              busFrom: '',
+                              busTo: '',
+                              departureTime: '',
                             ),
                           ),
                         );
@@ -270,11 +270,7 @@ class LegendItem extends StatelessWidget {
   final Color color;
   final String text;
 
-  const LegendItem({
-    super.key,
-    required this.color,
-    required this.text,
-  });
+  const LegendItem({super.key, required this.color, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -282,13 +278,7 @@ class LegendItem extends StatelessWidget {
       children: [
         Icon(Icons.event_seat, size: 18, color: color),
         const SizedBox(height: 4),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.black87,
-          ),
-        ),
+        Text(text, style: const TextStyle(fontSize: 11, color: Colors.black87)),
       ],
     );
   }

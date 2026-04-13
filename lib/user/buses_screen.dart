@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'payment_screen.dart';
 
 class BusesScreen extends StatelessWidget {
@@ -11,13 +12,13 @@ class BusesScreen extends StatelessWidget {
       "name": "Nutt Coach",
       "time": "10:00 AM - 2:00 PM",
       "price": "1500",
-      "seats": "12"
+      "seats": "12",
     },
     {
       "name": "Nutt Coach",
       "time": "1:00 PM - 5:00 PM",
       "price": "1800",
-      "seats": "8"
+      "seats": "8",
     },
   ];
 
@@ -29,10 +30,7 @@ class BusesScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           "Available Buses",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: themeColor,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: themeColor),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -58,7 +56,6 @@ class BusesScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Text(
                     bus["name"]!,
                     style: TextStyle(
@@ -110,11 +107,10 @@ class BusesScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => PaymentScreen(
                               date: "10 Apr 2026",
-                              time: bus["time"]!,
-                              toCity: "Karachi",
-                              fromCity: "Lahore",
-                              gender: "N/A",
-                              seat: int.parse(bus["seats"]!),
+                              busFrom: "City A",
+                              busTo: "City B",
+                              busId: '${index + 1}',
+                              departureTime: bus["time"]!,
                               fare: int.parse(bus["price"]!),
                             ),
                           ),
