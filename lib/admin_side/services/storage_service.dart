@@ -27,7 +27,7 @@ class StorageService {
   }
 
   List<Map<String, dynamic>> getBookings() {
-    final String bookingsJson =
+    final String bookingsJson =   
         _prefs.getString(AppConstants.bookingsKey) ?? '[]';
     return JsonUtils.decodeList(bookingsJson);
   }
