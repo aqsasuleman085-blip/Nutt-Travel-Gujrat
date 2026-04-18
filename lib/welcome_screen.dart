@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nutt/admin/admin_login_screen.dart';
 import 'package:nutt/user/login.dart';
 import 'package:nutt/user/seats_selection.dart';
-import 'package:nutt/user/signup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // / 🔹 WELCOME SCREEN (WHITE + EMERALD)

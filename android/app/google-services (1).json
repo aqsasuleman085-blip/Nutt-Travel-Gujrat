@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "788481227164",
+    "project_id": "nutt-setup",
+    "storage_bucket": "nutt-setup.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:788481227164:android:af9035a2a4b2a50da7b059",
+        "android_client_info": {
+          "package_name": "com.example.nutt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzxh9B2RVL3g-CjKS7vNzXo2Iy52wgwOE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

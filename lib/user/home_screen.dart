@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/user/bus_schedule.dart';
-import 'package:nutt/user/buses_screen.dart';
-import 'package:nutt/user/button.dart';
 import 'package:nutt/user/profile_screen.dart';
 import 'package:nutt/user/tickets_screen.dart';
 
@@ -14,12 +12,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
+  final Color themeColor = const Color(0xff10B981);
 
   final List<Widget> _pages = [
     HomeTab(),
     TicketsScreen(),
-    BusesScreen(),
     ProfileScreen(),
   ];
 
@@ -28,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _pages[_currentIndex],
+
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         currentIndex: _currentIndex,
@@ -46,14 +44,39 @@ class _HomeScreenState extends State<HomeScreen> {
             label: "Tickets",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.directions_bus),
-            label: "Buses",
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: "Profile",
           ),
         ],
+      ),
+    );
+  }
+}
+
+// 🔹 NOTIFICATION SCREEN (NEW)
+class NotificationScreen extends StatelessWidget {
+  final Color themeColor = const Color(0xff10B981);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Notifications"),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: themeColor),
+        titleTextStyle: TextStyle(
+          color: themeColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      body: const Center(
+        child: Text(
+          "No Notifications Yet",
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
       ),
     );
   }
@@ -190,7 +213,7 @@ class _HomeTabState extends State<HomeTab> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ProfileScreen(),
+                          builder: (context) => NotificationScreen(),
                         ),
                       );
                     },
@@ -273,13 +296,12 @@ class _HomeTabState extends State<HomeTab> {
 
                   const SizedBox(height: 20),
 
-                  // 🔥 FIND SCHEDULE BUTTON (GREEN FIXED)
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: themeColor, // ✅ GREEN
+                        backgroundColor: themeColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50),
                         ),

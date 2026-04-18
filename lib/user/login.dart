@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'signup.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserLogin extends StatefulWidget {
   const UserLogin({super.key});
@@ -16,6 +17,27 @@ class _LoginPageState extends State<UserLogin>
   late Animation<Offset> _slideAnimation;
 
   final Color themeColor = const Color(0xff10B981); // 🔵 Nice blue
+
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+
+  Future<void> loginUser() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login failed")),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -94,11 +116,14 @@ class _LoginPageState extends State<UserLogin>
                               label: "Email",
                               icon: Icons.email_outlined,
                               color: themeColor,
+                              controller: emailController,
                             ),
                             const SizedBox(height: 10),
                             PasswordInputField(
                               label: "Password",
                               color: themeColor,
+                              controller: passwordController,
+
                             ),
                           ],
                         ),
@@ -110,12 +135,7 @@ class _LoginPageState extends State<UserLogin>
                           },
                           onTapUp: (_) {
                             setState(() => _isButtonPressed = false);
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomeScreen(),
-                              ),
-                            );
+                            loginUser(); 
                           },
                           onTapCancel: () {
                             setState(() => _isButtonPressed = false);
@@ -202,6 +222,7 @@ Widget inputFile({
   required String label,
   IconData? icon,
   required Color color,
+  required TextEditingController controller,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,6 +237,7 @@ Widget inputFile({
       ),
       const SizedBox(height: 5),
       TextField(
+        controller: controller, 
         decoration: InputDecoration(
           prefixIcon: icon != null ? Icon(icon, color: color) : null,
           enabledBorder: OutlineInputBorder(
@@ -239,11 +261,14 @@ Widget inputFile({
 class PasswordInputField extends StatefulWidget {
   final String label;
   final Color color;
+  final TextEditingController controller; 
 
   const PasswordInputField({
     super.key,
     required this.label,
     required this.color,
+   required this.controller, // 👈 ADD THIS
+
   });
 
   @override
@@ -268,6 +293,7 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
         ),
         const SizedBox(height: 5),
         TextField(
+          controller: widget.controller, // 👈 IMPORTANT FIX
           obscureText: _obscureText,
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.lock_outline, color: widget.color),

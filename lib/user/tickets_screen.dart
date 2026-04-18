@@ -8,31 +8,72 @@ class TicketsScreen extends StatefulWidget {
 }
 
 class _TicketsScreenState extends State<TicketsScreen> {
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  final Color themeColor = const Color(0xff10B981);
 
-  final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
-
-  final List<Map<String, String>> upcomingTickets = [
+  final List<Map<String, String>> tickets = [
     {
       "bus": "Nutt Coach Service",
       "route": "Gujrat → Lahore",
       "date": "26 Apr 2026",
       "time": "10:00 AM",
       "seat": "A1",
-      "id": "TX123"
+      "id": "TX123",
+      "status": "pending"
     },
-  ];
-
-  final List<Map<String, String>> pastTickets = [
     {
       "bus": "Nutt Coach Service",
       "route": "Gujrat → Islamabad",
       "date": "20 Apr 2026",
       "time": "02:00 PM",
       "seat": "B3",
-      "id": "TX456"
+      "id": "TX456",
+      "status": "approved"
+    },
+    {
+      "bus": "Nutt Coach Service",
+      "route": "Lahore → Multan",
+      "date": "18 Apr 2026",
+      "time": "01:00 PM",
+      "seat": "C2",
+      "id": "TX789",
+      "status": "rejected"
     },
   ];
+
+  Widget buildStatus(String status) {
+    Color color;
+    IconData? icon;
+
+    switch (status) {
+      case "approved":
+        color = Colors.green;
+        icon = Icons.check_circle;
+        break;
+      case "rejected":
+        color = Colors.red;
+        icon = Icons.cancel;
+        break;
+      default:
+        color = Colors.orange;
+        icon = null;
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null)
+          Icon(icon, color: color, size: 18),
+        if (icon != null) const SizedBox(width: 4),
+        Text(
+          status.toUpperCase(),
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget buildTicketCard(Map<String, String> ticket) {
     return Card(
@@ -62,6 +103,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
               style: const TextStyle(fontSize: 15, color: Colors.black87),
             ),
             const SizedBox(height: 8),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -75,7 +117,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 5),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -89,19 +133,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 12),
 
+            // 🔹 STATUS
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themeColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () {},
-                  child: const Text("View"),
-                ),
+                buildStatus(ticket["status"]!),
               ],
             )
           ],
@@ -110,7 +149,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  Widget buildList(List<Map<String, String>> tickets) {
+  Widget buildList() {
     if (tickets.isEmpty) {
       return const Center(
         child: Text(
@@ -128,44 +167,22 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  Widget getCurrentScreen() {
-    return selectedIndex == 0
-        ? buildList(upcomingTickets)
-        : buildList(pastTickets);
-  }
-
-  Widget buildTopButtons() {
+  Widget buildTopButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
         children: [
-          buildButton("Upcoming", 0),
-          buildButton("Past Tickets", 1),
-        ],
-      ),
-    );
-  }
-
-  Widget buildButton(String text, int index) {
-    bool isSelected = selectedIndex == index;
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                isSelected ? themeColor : Colors.grey.shade300,
-            foregroundColor:
-                isSelected ? Colors.white : Colors.black,
+          Expanded(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: themeColor,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {},
+              child: const Text("Current"),
+            ),
           ),
-          onPressed: () {
-            setState(() {
-              selectedIndex = index;
-            });
-          },
-          child: Text(text),
-        ),
+        ],
       ),
     );
   }
@@ -192,8 +209,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
       body: Column(
         children: [
-          buildTopButtons(),
-          Expanded(child: getCurrentScreen()),
+          buildTopButton(),
+          Expanded(child: buildList()),
         ],
       ),
     );

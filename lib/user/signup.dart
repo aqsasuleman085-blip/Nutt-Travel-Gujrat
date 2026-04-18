@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/user/home_screen.dart';
 import 'login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -19,6 +20,39 @@ class _SignupPageState extends State<SignupPage>
   bool _isButtonPressed = false;
 
   final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+ final confirmPasswordController = TextEditingController();
+final usernameController = TextEditingController();
+
+Future<void> signupUser() async {
+  if (passwordController.text != confirmPasswordController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Passwords do not match")),
+    );
+    return;
+  }
+
+  try {
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Signup Successful")),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomeScreen()),
+    );
+  } on FirebaseAuthException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.message ?? "Error occurred")),
+    );
+  }
+}
 
   @override
   void initState() {
@@ -87,14 +121,18 @@ class _SignupPageState extends State<SignupPage>
                       inputFile(
                         label: "Username",
                         icon: Icons.person,
+                        controller: usernameController,
                       ),
                       inputFile(
                         label: "Email",
                         icon: Icons.email,
+                        controller: emailController,
+                      
                       ),
                       inputFile(
                         label: "Password",
                         icon: Icons.lock,
+                        controller: passwordController,
                         obscureText: _obscurePassword,
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -114,6 +152,7 @@ class _SignupPageState extends State<SignupPage>
                         label: "Confirm Password",
                         icon: Icons.lock,
                         obscureText: _obscureConfirmPassword,
+                        controller: confirmPasswordController,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
@@ -139,12 +178,7 @@ class _SignupPageState extends State<SignupPage>
                     },
                     onTapUp: (_) {
                       setState(() => _isButtonPressed = false);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HomeScreen(),
-                        ),
-                      );
+                      signupUser();
                     },
                     onTapCancel: () {
                       setState(() => _isButtonPressed = false);
@@ -212,6 +246,7 @@ class _SignupPageState extends State<SignupPage>
   // Input Field Widget
   Widget inputFile({
     required String label,
+    TextEditingController? controller,   // ✅ ADD THIS
     IconData? icon,
     bool obscureText = false,
     Widget? suffixIcon,
@@ -229,6 +264,7 @@ class _SignupPageState extends State<SignupPage>
         ),
         const SizedBox(height: 5),
         TextField(
+          controller: controller,   // ✅ ADD THIS
           obscureText: obscureText,
           decoration: InputDecoration(
             prefixIcon: icon != null
