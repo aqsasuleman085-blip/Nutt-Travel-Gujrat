@@ -11,6 +11,7 @@ class SeatSelectionScreen extends StatefulWidget {
   final String toCity;
   final String time;
   final String date;
+  final String busId;
 
   const SeatSelectionScreen({
     super.key,
@@ -18,6 +19,7 @@ class SeatSelectionScreen extends StatefulWidget {
     required this.toCity,
     required this.time,
     required this.date,
+    this.busId = '',
   });
 
   @override
@@ -220,9 +222,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                               fromCity: 'jas',
                               seat: 12,
                               time: 'sdf',
-                              toCity: 'Jallalpur',
-
+                              toCity: widget.toCity,
                               fare: 23,
+                              busId: widget.busId,
                             ),
                           ),
                         );

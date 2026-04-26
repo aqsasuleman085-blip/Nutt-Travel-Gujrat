@@ -1,37 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/bus_model.dart';
-import '../services/storage_service.dart';
 
 class BusProvider with ChangeNotifier {
-  final SharedPreferences _prefs;
-  late final StorageService _storageService;
-  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   List<BusModel> _buses = [];
   bool _isLoading = false;
-  
-  BusProvider(this._prefs) {
-    _storageService = StorageService(_prefs);
+
+  BusProvider() {
     _loadBuses();
   }
-  
+
   // Getters
   List<BusModel> get buses => _buses;
   bool get isLoading => _isLoading;
-  
-  // Load buses from storage
+
+  // Listen to buses from Firestore
   void _loadBuses() {
-    final busesData = _storageService.getBuses();
-    _buses = busesData.map((busData) => BusModel.fromMap(busData)).toList();
-    notifyListeners();
+    _firestore.collection('buses').snapshots().listen((snapshot) {
+      _buses = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // ensure ID matches the doc id
+        return BusModel.fromMap(data);
+      }).toList();
+      notifyListeners();
+    }, onError: (error) {
+      debugPrint('Error listening to buses: $error');
+    });
   }
-  
-  // Save buses to storage
-  Future<void> _saveBuses() async {
-    final busesData = _buses.map((bus) => bus.toMap()).toList();
-    await _storageService.saveBuses(busesData);
-  }
-  
+
   // Add a new bus
   Future<void> addBus({
     required String from,
@@ -43,20 +41,20 @@ class BusProvider with ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
-      final newBus = BusModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        from: from,
-        to: to,
-        departureTime: departureTime,
-        ticketPrice: ticketPrice,
-        driverName: driverName,
-        numberPlate: numberPlate,
-      );
-      
-      _buses.add(newBus);
-      await _saveBuses();
+      final newBusData = {
+        'from': from,
+        'to': to,
+        'departureTime': departureTime,
+        'ticketPrice': ticketPrice,
+        'driverName': driverName,
+        'numberPlate': numberPlate,
+        'status': 'Active', // Default status
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      await _firestore.collection('buses').add(newBusData);
     } catch (e) {
       debugPrint('Error adding bus: $e');
     } finally {
@@ -64,43 +62,27 @@ class BusProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   // Update bus status
   Future<void> updateBusStatus(String busId, String newStatus) async {
     try {
-      final busIndex = _buses.indexWhere((bus) => bus.id == busId);
-      if (busIndex != -1) {
-        _buses[busIndex] = BusModel(
-          id: _buses[busIndex].id,
-          from: _buses[busIndex].from,
-          to: _buses[busIndex].to,
-          departureTime: _buses[busIndex].departureTime,
-          ticketPrice: _buses[busIndex].ticketPrice,
-          driverName: _buses[busIndex].driverName,
-          numberPlate: _buses[busIndex].numberPlate,
-          status: newStatus,
-          createdAt: _buses[busIndex].createdAt,
-        );
-        
-        await _saveBuses();
-        notifyListeners();
-      }
+      await _firestore.collection('buses').doc(busId).update({
+        'status': newStatus,
+      });
     } catch (e) {
       debugPrint('Error updating bus status: $e');
     }
   }
-  
+
   // Delete a bus
   Future<void> deleteBus(String busId) async {
     try {
-      _buses.removeWhere((bus) => bus.id == busId);
-      await _saveBuses();
-      notifyListeners();
+      await _firestore.collection('buses').doc(busId).delete();
     } catch (e) {
       debugPrint('Error deleting bus: $e');
     }
   }
-  
+
   // Get active buses count
   int get activeBusesCount {
     return _buses.where((bus) => bus.status == 'Active').length;

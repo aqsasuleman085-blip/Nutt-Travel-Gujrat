@@ -1,62 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/storage_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DashboardProvider with ChangeNotifier {
-  final SharedPreferences _prefs;
-  late final StorageService _storageService;
-  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   int _totalUsers = 0;
   double _totalEarnings = 0.0;
   int _totalBuses = 0;
   int _totalBookings = 0;
   bool _isLoading = false;
-  
-  DashboardProvider(this._prefs) {
-    _storageService = StorageService(_prefs);
+
+  DashboardProvider() {
     _calculateMetrics();
   }
-  
+
   // Getters
   int get totalUsers => _totalUsers;
   double get totalEarnings => _totalEarnings;
   int get totalBuses => _totalBuses;
   int get totalBookings => _totalBookings;
   bool get isLoading => _isLoading;
-  
-  // Calculate dashboard metrics
+
   void _calculateMetrics() {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
-      // Get bookings data
-      final bookingsData = _storageService.getBookings();
-      final approvedBookings = bookingsData.where((booking) => booking['status'] == 'approved');
-      
-      // Calculate total earnings from approved bookings
-      _totalEarnings = approvedBookings.fold(0.0, (sum, booking) => sum + (booking['price'] as num).toDouble());
-      
-      // Calculate total bookings
-      _totalBookings = bookingsData.length;
-      
-      // Calculate unique users
-      final uniqueEmails = bookingsData.map((booking) => booking['userEmail'] as String).toSet();
-      _totalUsers = uniqueEmails.length;
-      
-      // Get total buses
-      final busesData = _storageService.getBuses();
-      _totalBuses = busesData.length;
+      _firestore.collection('bookings').snapshots().listen((bookingsSnapshot) {
+        final docs = bookingsSnapshot.docs;
+        _totalBookings = docs.length;
+
+        final approved = docs.where((doc) => doc.data()['status'] == 'approved');
+        _totalEarnings = approved.fold(0.0, (sum, doc) {
+          final price = doc.data()['price'];
+          return sum + (price as num).toDouble();
+        });
+
+        final uniqueEmails = docs.map((doc) => doc.data()['userEmail'] as String?).where((e) => e != null).toSet();
+        _totalUsers = uniqueEmails.length;
+        
+        _isLoading = false;
+        notifyListeners();
+      });
+
+      _firestore.collection('buses').snapshots().listen((busesSnapshot) {
+        _totalBuses = busesSnapshot.docs.length;
+        notifyListeners();
+      });
     } catch (e) {
       debugPrint('Error calculating metrics: $e');
-    } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-  
-  // Refresh metrics
+
   void refreshMetrics() {
-    _calculateMetrics();
+    // With streams, refreshing is automatic, but we can keep it for signature match
   }
 }

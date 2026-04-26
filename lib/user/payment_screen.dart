@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:nutt/user/colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nutt/user/home_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -11,6 +14,7 @@ class PaymentScreen extends StatefulWidget {
   final String fromCity;
   final int seat;
   final int fare;
+  final String busId;
 
   const PaymentScreen({
     super.key,
@@ -20,6 +24,7 @@ class PaymentScreen extends StatefulWidget {
     required this.fromCity,
     required this.seat,
     required this.fare,
+    required this.busId,
   });
 
   @override
@@ -35,6 +40,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String selectedPayment = "cod"; // "cod" or "jazzcash"
   File? paymentScreenshot;
   final ImagePicker picker = ImagePicker();
+
+  bool _isSaving = false;
 
   bool get isSubmitEnabled {
     if (nameController.text.trim().isEmpty ||
@@ -60,6 +67,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void showSuccessPopup() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -74,6 +82,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
             onPressed: () {
+              Navigator.pop(context); // Close dialog
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => HomeScreen()),
@@ -84,6 +93,58 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _submitBooking() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      String? screenshotUrl;
+
+      if (selectedPayment == "jazzcash" && paymentScreenshot != null) {
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('payment_receipts')
+            .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+        await storageRef.putFile(paymentScreenshot!);
+        screenshotUrl = await storageRef.getDownloadURL();
+      }
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final userEmail = currentUser?.email ?? 'Unknown Email';
+      final userUid = currentUser?.uid;
+
+      await FirebaseFirestore.instance.collection('bookings').add({
+        'userName': nameController.text.trim(),
+        'userEmail': userEmail,
+        'userUid': userUid,
+        'busId': widget.busId,
+        'busFrom': widget.fromCity,
+        'busTo': widget.toCity,
+        'date': widget.date,
+        'time': widget.time,
+        'seat': widget.seat,
+        'price': widget.fare,
+        'paymentMethod': selectedPayment,
+        'jazzAccountName': jazzNameController.text.trim(),
+        'screenshotUrl': screenshotUrl,
+        'phone': phoneController.text.trim(),
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      showSuccessPopup();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
 
   void showConfirmPopup() {
@@ -103,9 +164,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
             onPressed: () {
               Navigator.pop(context);
-              // Here you would call your booking provider
-              // For now, just show success
-              showSuccessPopup();
+              _submitBooking();
             },
             child: const Text("Confirm", style: TextStyle(color: Colors.white)),
           ),
@@ -123,208 +182,213 @@ class _PaymentScreenState extends State<PaymentScreen> {
         title: const Text("Payment", style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Trip Summary Card
-            Container(
+      body: _isSaving
+          ? Center(child: CircularProgressIndicator(color: primaryGreen))
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: primaryGreen.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: primaryGreen.withOpacity(0.3)),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Trip Summary Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: primaryGreen.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: primaryGreen.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Trip Summary",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        Text("${widget.fromCity} → ${widget.toCity}"),
+                        Text("Date: ${widget.date}"),
+                        Text("Time: ${widget.time}"),
+                        Text("Seat: ${widget.seat}"),
+                        const Divider(),
+                        Text(
+                          "Fare: Rs ${widget.fare}",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Passenger Info
                   const Text(
-                    "Trip Summary",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    "Passenger Info",
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  Text("${widget.fromCity} → ${widget.toCity}"),
-                  Text("Date: ${widget.date}"),
-                  Text("Time: ${widget.time}"),
-                  Text("Seat: ${widget.seat}"),
-                  const Divider(),
-                  Text(
-                    "Fare: Rs ${widget.fare}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: primaryGreen,
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: "Full Name",
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: primaryGreen),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      hintText: "Phone Number",
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: primaryGreen),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Payment Method
+                  const Text(
+                    "Payment Method",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  RadioListTile(
+                    activeColor: primaryGreen,
+                    value: "cod",
+                    groupValue: selectedPayment,
+                    onChanged: (val) {
+                      setState(() {
+                        selectedPayment = val.toString();
+                      });
+                    },
+                    title: const Text("Cash on Delivery"),
+                  ),
+                  RadioListTile(
+                    activeColor: primaryGreen,
+                    value: "jazzcash",
+                    groupValue: selectedPayment,
+                    onChanged: (val) {
+                      setState(() {
+                        selectedPayment = val.toString();
+                      });
+                    },
+                    title: const Text("JazzCash"),
+                  ),
+
+                  // JazzCash details
+                  if (selectedPayment == "jazzcash")
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: primaryGreen.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: primaryGreen.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "JazzCash Number: 03001234563",
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: jazzNameController,
+                            decoration: InputDecoration(
+                              hintText: "Account Holder Name",
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          GestureDetector(
+                            onTap: pickScreenshot,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: primaryGreen),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    paymentScreenshot == null
+                                        ? Icons.camera_alt
+                                        : Icons.check_circle,
+                                    color: primaryGreen,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    paymentScreenshot == null
+                                        ? "Attach Screenshot"
+                                        : "Screenshot Attached",
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (paymentScreenshot != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                paymentScreenshot!.path.split('/').last,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 30),
+
+                  // Submit Button (disabled until valid)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        disabledBackgroundColor: Colors.grey.shade300,
+                      ),
+                      onPressed: isSubmitEnabled ? showConfirmPopup : null,
+                      child: const Text(
+                        "Submit",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Passenger Info
-            const Text(
-              "Passenger Info",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                hintText: "Full Name",
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: primaryGreen),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                hintText: "Phone Number",
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: primaryGreen),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Payment Method
-            const Text(
-              "Payment Method",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            RadioListTile(
-              activeColor: primaryGreen,
-              value: "cod",
-              groupValue: selectedPayment,
-              onChanged: (val) {
-                setState(() {
-                  selectedPayment = val.toString();
-                });
-              },
-              title: const Text("Cash on Delivery"),
-            ),
-            RadioListTile(
-              activeColor: primaryGreen,
-              value: "jazzcash",
-              groupValue: selectedPayment,
-              onChanged: (val) {
-                setState(() {
-                  selectedPayment = val.toString();
-                });
-              },
-              title: const Text("JazzCash"),
-            ),
-
-            // JazzCash details
-            if (selectedPayment == "jazzcash")
-              Container(
-                margin: const EdgeInsets.only(top: 10),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: primaryGreen.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: primaryGreen.withOpacity(0.3)),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      "JazzCash Number: 03001234563",
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: jazzNameController,
-                      decoration: InputDecoration(
-                        hintText: "Account Holder Name",
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: pickScreenshot,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: primaryGreen),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              paymentScreenshot == null
-                                  ? Icons.camera_alt
-                                  : Icons.check_circle,
-                              color: primaryGreen,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              paymentScreenshot == null
-                                  ? "Attach Screenshot"
-                                  : "Screenshot Attached",
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (paymentScreenshot != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          paymentScreenshot!.path.split('/').last,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 30),
-
-            // Submit Button (disabled until valid)
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  disabledBackgroundColor: Colors.grey.shade300,
-                ),
-                onPressed: isSubmitEnabled ? showConfirmPopup : null,
-                child: const Text(
-                  "Submit",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

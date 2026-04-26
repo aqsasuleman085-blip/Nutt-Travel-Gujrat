@@ -9,7 +9,7 @@ import 'package:nutt/admin_side/providers/dashboard_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/welcome_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 //file
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,29 +26,24 @@ void main() async {
       ),
     );
   } else {
-   await Firebase.initializeApp();
+    await Firebase.initializeApp();
   }
 
-  WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-
-  runApp(MyApp(prefs: prefs));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final SharedPreferences prefs;
-
-  const MyApp({Key? key, required this.prefs}) : super(key: key);
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider(prefs)),
-        ChangeNotifierProvider(create: (_) => BusProvider(prefs)),
-        ChangeNotifierProvider(create: (_) => BookingProvider(prefs)),
-        ChangeNotifierProvider(create: (_) => DashboardProvider(prefs)),
-        ChangeNotifierProvider(create: (_) => NotificationProvider(prefs)),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => BusProvider()),
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp(
         title: 'Bus Management System',

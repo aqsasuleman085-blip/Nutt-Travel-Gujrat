@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'payment_screen.dart';
 
 class BusesScreen extends StatelessWidget {
   const BusesScreen({super.key});
 
   final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
-//file
-  final List<Map<String, String>> buses = const [
-    {
-      "name": "Nutt Coach",
-      "time": "10:00 AM - 2:00 PM",
-      "price": "1500",
-      "seats": "12",
-    },
-    {
-      "name": "Nutt Coach",
-      "time": "1:00 PM - 5:00 PM",
-      "price": "1800",
-      "seats": "8",
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -38,92 +23,112 @@ class BusesScreen extends StatelessWidget {
         iconTheme: IconThemeData(color: themeColor),
       ),
 
-      body: ListView.builder(
-        itemCount: buses.length,
-        itemBuilder: (context, index) {
-          final bus = buses[index];
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('buses').where('status', isEqualTo: 'Active').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          return Card(
-            color: Colors.white,
-            margin: const EdgeInsets.all(10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-              side: BorderSide(color: themeColor.withOpacity(0.3)),
-            ),
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    bus["name"]!,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: themeColor,
-                    ),
-                  ),
+          if (snapshot.hasError) {
+            return const Center(child: Text('Error loading buses'));
+          }
 
-                  const SizedBox(height: 5),
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No active buses available at the moment.'));
+          }
 
-                  Text(
-                    "Time: ${bus["time"]}",
-                    style: const TextStyle(color: Colors.black87),
-                  ),
+          final buses = snapshot.data!.docs;
 
-                  Text(
-                    "Available Seats: ${bus["seats"]}",
-                    style: const TextStyle(color: Colors.black87),
-                  ),
+          return ListView.builder(
+            itemCount: buses.length,
+            itemBuilder: (context, index) {
+              final busDoc = buses[index];
+              final busData = busDoc.data() as Map<String, dynamic>;
 
-                  const SizedBox(height: 5),
-
-                  Text(
-                    "Price: Rs ${bus["price"]}",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+              return Card(
+                color: Colors.white,
+                margin: const EdgeInsets.all(10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(color: themeColor.withOpacity(0.3)),
+                ),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${busData['from']} to ${busData['to']}",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: themeColor,
                         ),
                       ),
 
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentScreen(
-                              date: "10 Apr 2026",
-                              fromCity: 'jas',
-                              seat: 12,
-                              time: 'sdf',
-                              toCity: 'Jallalpur',
+                      const SizedBox(height: 5),
 
-                              fare: int.parse(bus["price"]!),
+                      Text(
+                        "Departure: ${busData['departureTime']}",
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+
+                      Text(
+                        "Driver: ${busData['driverName']} (${busData['numberPlate']})",
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      Text(
+                        "Price: Rs ${busData['ticketPrice']}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: themeColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                        );
-                      },
 
-                      child: const Text("Book Now"),
-                    ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PaymentScreen(
+                                  date: "Today", // Ideally should pass selected date from previous screen
+                                  fromCity: busData['from'],
+                                  seat: 1, // Placeholder
+                                  time: busData['departureTime'],
+                                  toCity: busData['to'],
+                                  fare: (busData['ticketPrice'] as num).toInt(),
+                                  busId: busDoc.id,
+                                ),
+                              ),
+                            );
+                          },
+
+                          child: const Text("Book Now"),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),

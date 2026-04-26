@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -9,36 +11,6 @@ class TicketsScreen extends StatefulWidget {
 
 class _TicketsScreenState extends State<TicketsScreen> {
   final Color themeColor = const Color(0xff10B981);
-
-  final List<Map<String, String>> tickets = [
-    {
-      "bus": "Nutt Coach Service",
-      "route": "Gujrat → Lahore",
-      "date": "26 Apr 2026",
-      "time": "10:00 AM",
-      "seat": "A1",
-      "id": "TX123",
-      "status": "pending"
-    },
-    {
-      "bus": "Nutt Coach Service",
-      "route": "Gujrat → Islamabad",
-      "date": "20 Apr 2026",
-      "time": "02:00 PM",
-      "seat": "B3",
-      "id": "TX456",
-      "status": "approved"
-    },
-    {
-      "bus": "Nutt Coach Service",
-      "route": "Lahore → Multan",
-      "date": "18 Apr 2026",
-      "time": "01:00 PM",
-      "seat": "C2",
-      "id": "TX789",
-      "status": "rejected"
-    },
-  ];
 
   Widget buildStatus(String status) {
     Color color;
@@ -55,15 +27,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
         break;
       default:
         color = Colors.orange;
-        icon = null;
+        icon = Icons.pending;
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null)
-          Icon(icon, color: color, size: 18),
-        if (icon != null) const SizedBox(width: 4),
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 4),
         Text(
           status.toUpperCase(),
           style: TextStyle(
@@ -75,7 +46,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  Widget buildTicketCard(Map<String, String> ticket) {
+  Widget buildTicketCard(Map<String, dynamic> ticket, String ticketId) {
     return Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(
@@ -90,7 +61,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ticket["bus"]!,
+              "Nutt Coach Service",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -99,7 +70,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              ticket["route"]!,
+              "${ticket["busFrom"]} → ${ticket["busTo"]}",
               style: const TextStyle(fontSize: 15, color: Colors.black87),
             ),
             const SizedBox(height: 8),
@@ -127,9 +98,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   "Seat: ${ticket["seat"]}",
                   style: const TextStyle(color: Colors.grey),
                 ),
-                Text(
-                  "ID: ${ticket["id"]}",
-                  style: const TextStyle(color: Colors.grey),
+                Flexible(
+                  child: Text(
+                    "ID: $ticketId",
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 ),
               ],
             ),
@@ -138,32 +112,18 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
             // 🔹 STATUS
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                buildStatus(ticket["status"]!),
+                 Text(
+                  "Fare: Rs ${ticket["price"]}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                buildStatus(ticket["status"] ?? "pending"),
               ],
             )
           ],
         ),
       ),
-    );
-  }
-
-  Widget buildList() {
-    if (tickets.isEmpty) {
-      return const Center(
-        child: Text(
-          "No tickets available",
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: tickets.length,
-      itemBuilder: (context, index) {
-        return buildTicketCard(tickets[index]);
-      },
     );
   }
 
@@ -179,7 +139,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () {},
-              child: const Text("Current"),
+              child: const Text("My Tickets"),
             ),
           ),
         ],
@@ -189,6 +149,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userUid = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -206,12 +168,50 @@ class _TicketsScreenState extends State<TicketsScreen> {
         ),
         iconTheme: IconThemeData(color: themeColor),
       ),
-      //s
 
       body: Column(
         children: [
           buildTopButton(),
-          Expanded(child: buildList()),
+          Expanded(
+            child: userUid == null
+                ? const Center(child: Text("Please log in to view tickets"))
+                : StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('bookings')
+                        .where('userUid', isEqualTo: userUid)
+                        .orderBy('createdAt', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return const Center(child: Text("Error fetching tickets"));
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "No tickets available",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        );
+                      }
+
+                      final tickets = snapshot.data!.docs;
+
+                      return ListView.builder(
+                        itemCount: tickets.length,
+                        itemBuilder: (context, index) {
+                          final doc = tickets[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          return buildTicketCard(data, doc.id);
+                        },
+                      );
+                    },
+                  ),
+          ),
         ],
       ),
     );
