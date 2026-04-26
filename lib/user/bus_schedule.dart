@@ -7,6 +7,7 @@ class BusScheduleScreen extends StatefulWidget {
   _BusScheduleScreenState createState() => _BusScheduleScreenState();
 }
 
+//file
 class _BusScheduleScreenState extends State<BusScheduleScreen> {
   int selectedIndex = 0;
 
@@ -59,10 +60,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
       appBar: AppBar(
         title: Text(
           "Bus Schedule",
-          style: TextStyle(
-            color: themeColor,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: themeColor, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -244,10 +242,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
       children: [
         Icon(icon, size: 16, color: themeColor),
         const SizedBox(width: 5),
-        Text(
-          text,
-          style: const TextStyle(fontSize: 13, color: Colors.black87),
-        ),
+        Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ],
     );
   }

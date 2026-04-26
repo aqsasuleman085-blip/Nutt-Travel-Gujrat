@@ -4,7 +4,7 @@ void main() {
   runApp(const MyApp());
 }
 
-/// 🎨 Emerald Green Theme App
+///  Emerald Green Theme App
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

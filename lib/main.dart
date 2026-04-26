@@ -10,7 +10,7 @@ import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/welcome_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+//file
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

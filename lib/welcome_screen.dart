@@ -4,7 +4,7 @@ import 'package:nutt/user/login.dart';
 import 'package:nutt/user/seats_selection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// / 🔹 WELCOME SCREEN (WHITE + EMERALD)
+// / 🔹 WELCOME SCREEN
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
