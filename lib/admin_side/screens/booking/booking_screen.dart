@@ -210,12 +210,13 @@ class _BookingScreenState extends State<BookingScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _row("Name", booking.userName),
+              _row("Passenger", booking.userName),
               _row("Phone", booking.phone),
               _row("CNIC", booking.cnic),
               _row("Seat", booking.seatNumber),
               _row("Route", "${booking.busFrom} → ${booking.busTo}"),
               _row("Date", booking.travelDate),
+              _row("Sender Name", booking.senderName),
               _row("Amount", "Rs ${booking.totalAmount}"),
               _row("Status", booking.status),
             ],
