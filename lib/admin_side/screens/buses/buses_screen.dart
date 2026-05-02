@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/constants/app_constants.dart';
 import '../../providers/bus_provider.dart';
 import '../../widgets/bus_card.dart';
@@ -19,9 +20,7 @@ class BusesScreen extends StatelessWidget {
             icon: const Icon(Icons.add),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const AddBusScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const AddBusScreen()),
               );
             },
           ),
@@ -46,10 +45,7 @@ class BusesScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     'No buses added yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -88,9 +84,9 @@ class BusesScreen extends StatelessWidget {
                       // Navigate to bus details
                       _showBusDetails(context, bus);
                     },
-                    onEdit: () {
-                      _editBus(context, bus);
-                    },
+                    // onEdit: () {
+                    //   _editBus(context, bus);
+                    // },
                     onDelete: () {
                       _confirmDeleteBus(context, bus);
                     },
@@ -115,10 +111,24 @@ class BusesScreen extends StatelessWidget {
           children: [
             _buildDetailRow('Driver', bus.driverName),
             _buildDetailRow('Number Plate', bus.numberPlate),
-            _buildDetailRow('Departure Time', bus.departureTime),
-            _buildDetailRow('Ticket Price', 'Rs. ${bus.ticketPrice.toStringAsFixed(0)}'),
+            _buildDetailRow('Total Seats', bus.totalSeats.toString()),
+            _buildDetailRow(
+              'Departure',
+              '${bus.departureAt.year.toString().padLeft(4, '0')}-'
+                  '${bus.departureAt.month.toString().padLeft(2, '0')}-'
+                  '${bus.departureAt.day.toString().padLeft(2, '0')} '
+                  '${bus.departureAt.hour.toString().padLeft(2, '0')}:'
+                  '${bus.departureAt.minute.toString().padLeft(2, '0')}',
+            ),
+            _buildDetailRow(
+              'Ticket Price',
+              'Rs. ${bus.ticketPrice.toStringAsFixed(0)}',
+            ),
             _buildDetailRow('Status', bus.status),
-            _buildDetailRow('Added On', '${bus.createdAt.day}/${bus.createdAt.month}/${bus.createdAt.year}'),
+            _buildDetailRow(
+              'Added On',
+              '${bus.createdAt.day}/${bus.createdAt.month}/${bus.createdAt.year}',
+            ),
           ],
         ),
         actions: [
@@ -147,9 +157,7 @@ class BusesScreen extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -158,7 +166,9 @@ class BusesScreen extends StatelessWidget {
   void _editBus(BuildContext context, bus) {
     // For simplicity, we'll show a message
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit functionality would be implemented here')),
+      const SnackBar(
+        content: Text('Edit functionality would be implemented here'),
+      ),
     );
   }
 
@@ -167,7 +177,9 @@ class BusesScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Bus'),
-        content: Text('Are you sure you want to delete the bus from ${bus.from} to ${bus.to}?'),
+        content: Text(
+          'Are you sure you want to delete the bus from ${bus.from} to ${bus.to}?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -175,7 +187,10 @@ class BusesScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Provider.of<BusProvider>(context, listen: false).deleteBus(bus.id);
+              Provider.of<BusProvider>(
+                context,
+                listen: false,
+              ).deleteBus(bus.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Bus deleted successfully')),

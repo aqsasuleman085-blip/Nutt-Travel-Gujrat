@@ -113,6 +113,32 @@ class BookingCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
+                  const Icon(Icons.event_seat, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Seat ${booking.seatNumber}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    booking.travelDate.isNotEmpty
+                        ? booking.travelDate
+                        : '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
                   const Icon(Icons.attach_money, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
@@ -124,15 +150,22 @@ class BookingCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
+                  if (booking.paymentScreenshotUrl.isNotEmpty)
+                    Icon(
+                      Icons.receipt_long,
+                      size: 16,
+                      color: Colors.green.shade400,
                     ),
-                  ),
+                  if (booking.paymentScreenshotUrl.isNotEmpty)
+                    const SizedBox(width: 4),
+                  if (booking.paymentScreenshotUrl.isNotEmpty)
+                    Text(
+                      'Proof attached',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green.shade400,
+                      ),
+                    ),
                 ],
               ),
               if (booking.status == 'pending' && (onApprove != null || onReject != null)) ...[

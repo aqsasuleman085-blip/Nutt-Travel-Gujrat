@@ -1,17 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nutt/admin_side/admin_side.dart';
 
-import '../services/auth_service.dart';
-import 'home_screen.dart';
-import 'signup.dart';
-
-class UserLogin extends StatefulWidget {
-  const UserLogin({super.key});
+class AdminLogin extends StatefulWidget {
+  const AdminLogin({super.key});
 
   @override
-  State<UserLogin> createState() => _LoginPageState();
+  State<AdminLogin> createState() => _AdminLoginPageState();
 }
 
-class _LoginPageState extends State<UserLogin>
+class _AdminLoginPageState extends State<AdminLogin>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -19,9 +17,8 @@ class _LoginPageState extends State<UserLogin>
 
   final Color themeColor = const Color(0xff10B981);
 
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -30,24 +27,44 @@ class _LoginPageState extends State<UserLogin>
 
     setState(() => _isLoading = true);
 
-    final result = await _authService.loginUser(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (result.success) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => AdminSide()),
       );
-    } else {
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      String message = "Login failed";
+
+      if (e.code == 'user-not-found') {
+        message = "No user found for this email";
+      } else if (e.code == 'wrong-password') {
+        message = "Incorrect password";
+      }
+
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(result.message ?? 'Login failed')));
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
     }
   }
 
@@ -103,7 +120,7 @@ class _LoginPageState extends State<UserLogin>
                         Column(
                           children: [
                             Text(
-                              "Login",
+                              "Admin Login",
                               style: TextStyle(
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
@@ -168,47 +185,6 @@ class _LoginPageState extends State<UserLogin>
                                         color: Colors.white,
                                       ),
                                     ),
-                            ),
-                          ),
-                        ),
-
-                        /// Signup
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Don't have an account?",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => SignupPage(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                " Sign up",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18,
-                                  color: themeColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        /// Image
-                        Container(
-                          margin: const EdgeInsets.only(top: 50),
-                          height: 200,
-                          decoration: const BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage("assets/login.jpeg"),
-                              fit: BoxFit.fitHeight,
                             ),
                           ),
                         ),

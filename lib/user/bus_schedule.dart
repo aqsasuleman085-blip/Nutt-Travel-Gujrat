@@ -1,58 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nutt/user/seats_selection.dart';
+
+import '../services/bus_service.dart';
+import 'seats_selection.dart';
 
 class BusScheduleScreen extends StatefulWidget {
+  final String fromCity;
+  final String toCity;
+  final DateTime selectedDate;
+
+  const BusScheduleScreen({
+    super.key,
+    required this.fromCity,
+    required this.toCity,
+    required this.selectedDate,
+  });
+
   @override
   _BusScheduleScreenState createState() => _BusScheduleScreenState();
 }
 
-//file
 class _BusScheduleScreenState extends State<BusScheduleScreen> {
   int selectedIndex = 0;
+  final BusService _busService = BusService();
+
+  @override
+  void initState() {
+    super.initState();
+    final today = DateTime.now();
+    final diff = widget.selectedDate.difference(
+      DateTime(today.year, today.month, today.day),
+    );
+    final index = diff.inDays;
+    if (index >= 0 && index < 7) {
+      selectedIndex = index;
+    }
+  }
 
   final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
 
-  List<DateTime> dates = List.generate(
-    7,
-    (index) => DateTime.now().add(Duration(days: index)),
-  );
-
-  Map<String, List<Map<String, dynamic>>> busData = {
-    "0": [
-      {
-        "time": "08:00 AM",
-        "route": "Karachi → Multan",
-        "type": "AC",
-        "seats": 40,
-        "duration": "12h",
-        "price": 4500,
-      },
-      {
-        "time": "02:00 PM",
-        "route": "Karachi → Lahore",
-        "type": "Non-AC",
-        "seats": 45,
-        "duration": "14h",
-        "price": 3500,
-      },
-    ],
-    "1": [
-      {
-        "time": "10:00 AM",
-        "route": "Karachi → Islamabad",
-        "type": "AC",
-        "seats": 38,
-        "duration": "16h",
-        "price": 6000,
-      },
-    ],
-  };
+  List<DateTime> get dates =>
+      List.generate(7, (index) => DateTime.now().add(Duration(days: index)));
 
   @override
   Widget build(BuildContext context) {
-    String key = selectedIndex.toString();
-    List buses = busData[key] ?? [];
+    final selectedDate = dates[selectedIndex];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -73,20 +65,41 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
           _buildDateSelector(),
           const SizedBox(height: 10),
           Expanded(
-            child: buses.isEmpty
-                ? const Center(
+            child: StreamBuilder(
+              stream: _busService.streamBuses(),
+              builder: (context, snapshot) {
+                final buses = snapshot.data ?? [];
+                final filtered = buses.where((bus) {
+                  if (bus.from != widget.fromCity || bus.to != widget.toCity) {
+                    return false;
+                  }
+                  if (!_isSameDay(bus.departureAt, selectedDate)) {
+                    return false;
+                  }
+                  if (bus.departureAt.isBefore(DateTime.now())) {
+                    return false;
+                  }
+                  return true;
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return const Center(
                     child: Text(
                       "No buses available",
                       style: TextStyle(color: Colors.grey),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: buses.length,
-                    itemBuilder: (context, index) {
-                      return _buildBusCard(buses[index]);
-                    },
-                  ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    return _buildBusCard(filtered[index]);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -151,17 +164,22 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
   }
 
   // 🔹 BUS CARD
-  Widget _buildBusCard(Map bus) {
+  Widget _buildBusCard(bus) {
+    final dateText = DateFormat('yyyy-MM-dd').format(bus.departureAt);
+    final timeText = DateFormat('HH:mm').format(bus.departureAt);
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => SeatSelectionScreen(
-              date: "Selected",
-              fromCity: "Guj",
-              time: bus["time"],
-              toCity: "Fas",
+              busId: bus.id,
+              date: dateText,
+              fromCity: bus.from,
+              time: timeText,
+              toCity: bus.to,
+              fare: bus.ticketPrice.toInt(),
+              totalSeats: bus.totalSeats,
             ),
           ),
         );
@@ -189,7 +207,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  bus["time"],
+                  timeText,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -197,7 +215,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
                   ),
                 ),
                 Text(
-                  "Rs ${bus["price"]}",
+                  "Rs ${bus.ticketPrice.toStringAsFixed(0)}",
                   style: TextStyle(
                     fontSize: 16,
                     color: themeColor,
@@ -211,7 +229,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
 
             // Route
             Text(
-              bus["route"],
+              '${bus.from} → ${bus.to}',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -225,9 +243,8 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _infoChip(Icons.ac_unit, bus["type"]),
-                _infoChip(Icons.event_seat, "${bus["seats"]} Seats"),
-                _infoChip(Icons.timer, bus["duration"]),
+                _infoChip(Icons.event_seat, "${bus.totalSeats} Seats"),
+                _infoChip(Icons.calendar_today, dateText),
               ],
             ),
           ],
@@ -245,5 +262,9 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
         Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ],
     );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }

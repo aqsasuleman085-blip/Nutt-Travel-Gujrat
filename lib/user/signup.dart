@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/user/home_screen.dart';
+
+import '../services/auth_service.dart';
 import 'login.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -9,55 +9,34 @@ class SignupPage extends StatefulWidget {
   @override
   State<SignupPage> createState() => _SignupPageState();
 }
-// This is a sign up page here
 
 class _SignupPageState extends State<SignupPage>
     with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  bool _isLoading = false;
+
+  String? _emailError;
+  String? _passwordError;
+
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  bool _isButtonPressed = false;
 
-  final Color themeColor = const Color(0xff10B981); // ✅ Emerald Green
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
-  final usernameController = TextEditingController();
+  final Color themeColor = const Color(0xff10B981);
 
-  Future<void> signupUser() async {
-    if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
-      return;
-    }
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
-    try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Signup Successful")));
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? "Error occurred")));
-    }
-  }
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -78,15 +57,104 @@ class _SignupPageState extends State<SignupPage>
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  bool _isValidEmail(String email) {
+    final regex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    return regex.hasMatch(email);
+  }
+
+  String? _validatePassword(String password) {
+    final hasMinLength = password.length >= 8;
+    final hasUppercase = password.contains(RegExp(r'[A-Z]'));
+    final hasLowercase = password.contains(RegExp(r'[a-z]'));
+    final hasDigit = password.contains(RegExp(r'[0-9]'));
+    final hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+
+    if (!hasMinLength ||
+        !hasUppercase ||
+        !hasLowercase ||
+        !hasDigit ||
+        !hasSpecialChar) {
+      return "Use 8+ chars with upper, lower, number & special char";
+    }
+    return null;
+  }
+
+  Future<void> _handleSignup() async {
+    if (_isLoading) return;
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter username')));
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter a valid email')));
+      return;
+    }
+
+    final passwordError = _validatePassword(password);
+    if (passwordError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(passwordError)));
+      return;
+    }
+
+    if (password != _confirmPasswordController.text.trim()) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final result = await _authService.signUpUser(
+      name: _nameController.text.trim(),
+      email: email,
+      password: password,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const UserLogin()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signup successful. Please login.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message ?? 'Signup failed')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white, // ✅ White background
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -96,10 +164,10 @@ class _SignupPageState extends State<SignupPage>
               position: _slideAnimation,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  // Title Section
+                children: [
+                  /// Title
                   Column(
-                    children: <Widget>[
+                    children: [
                       Text(
                         "Sign up",
                         style: TextStyle(
@@ -116,24 +184,42 @@ class _SignupPageState extends State<SignupPage>
                     ],
                   ),
 
-                  // Input Fields
+                  /// Inputs
                   Column(
-                    children: <Widget>[
+                    children: [
                       inputFile(
                         label: "Username",
                         icon: Icons.person,
-                        controller: usernameController,
+                        controller: _nameController,
                       ),
                       inputFile(
                         label: "Email",
                         icon: Icons.email,
-                        controller: emailController,
+                        controller: _emailController,
+                        onChanged: (value) {
+                          setState(() {
+                            _emailError = _isValidEmail(value.trim())
+                                ? null
+                                : "Enter valid email";
+                          });
+                        },
                       ),
+                      if (_emailError != null)
+                        Text(
+                          _emailError!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+
                       inputFile(
                         label: "Password",
                         icon: Icons.lock,
-                        controller: passwordController,
                         obscureText: _obscurePassword,
+                        controller: _passwordController,
+                        onChanged: (value) {
+                          setState(() {
+                            _passwordError = _validatePassword(value);
+                          });
+                        },
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
@@ -148,11 +234,17 @@ class _SignupPageState extends State<SignupPage>
                           },
                         ),
                       ),
+                      if (_passwordError != null)
+                        Text(
+                          _passwordError!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+
                       inputFile(
                         label: "Confirm Password",
                         icon: Icons.lock,
                         obscureText: _obscureConfirmPassword,
-                        controller: confirmPasswordController,
+                        controller: _confirmPasswordController,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
@@ -171,45 +263,43 @@ class _SignupPageState extends State<SignupPage>
                     ],
                   ),
 
-                  // Sign up Button
+                  /// Signup Button
                   GestureDetector(
-                    onTapDown: (_) {
-                      setState(() => _isButtonPressed = true);
-                    },
-                    onTapUp: (_) {
-                      setState(() => _isButtonPressed = false);
-                      signupUser();
-                    },
-                    onTapCancel: () {
-                      setState(() => _isButtonPressed = false);
-                    },
+                    onTap: _isLoading ? null : _handleSignup,
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      transform: Matrix4.identity()
-                        ..scale(_isButtonPressed ? 0.95 : 1.0),
+                      duration: const Duration(milliseconds: 200),
                       width: double.infinity,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: themeColor, // ✅ Button color
+                        color: _isLoading ? Colors.grey : themeColor,
                         borderRadius: BorderRadius.circular(50),
                       ),
-                      child: const Center(
-                        child: Text(
-                          "Sign up",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
+                      child: Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                "Sign up",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),
 
-                  // Login Navigation
+                  /// Login redirect
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
+                    children: [
                       const Text(
                         "Already have an account?",
                         style: TextStyle(color: Colors.grey),
@@ -243,45 +333,44 @@ class _SignupPageState extends State<SignupPage>
     );
   }
 
-  // Input Field Widget
+  /// Input Field Widget
   Widget inputFile({
     required String label,
-    TextEditingController? controller, // ✅ ADD THIS
     IconData? icon,
     bool obscureText = false,
     Widget? suffixIcon,
+    TextEditingController? controller,
+    Function(String)? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
+      children: [
         Text(
           label,
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w400,
-            color: themeColor, // ✅ label color
+            color: themeColor,
           ),
         ),
         const SizedBox(height: 5),
         TextField(
-          controller: controller, // ✅ ADD THIS
+          controller: controller,
           obscureText: obscureText,
+          onChanged: onChanged,
           decoration: InputDecoration(
-            prefixIcon: icon != null
-                ? Icon(icon, color: themeColor) // ✅ icon color
-                : null,
+            prefixIcon: icon != null ? Icon(icon, color: themeColor) : null,
             suffixIcon: suffixIcon,
+            border: OutlineInputBorder(
+              borderSide: BorderSide(color: themeColor),
+            ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: themeColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: themeColor),
             ),
-            border: OutlineInputBorder(
-              borderSide: BorderSide(color: themeColor),
-            ),
           ),
-          style: const TextStyle(color: Colors.black),
         ),
         const SizedBox(height: 10),
       ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/admin_side/screens/admin_login_screen.dart';
+import 'package:nutt/admin_side/admin_login.dart';
 import 'package:nutt/user/login.dart';
 import 'package:nutt/user/seats_selection.dart';
 
-// / 🔹 WELCOME SCREEN
+// / 🔹 WELCOME SCREEN (WHITE + EMERALD)
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
@@ -56,11 +56,9 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => AdminLoginScreen(),
-                          ),
+                          MaterialPageRoute(builder: (context) => AdminLogin()),
                         );
                       },
                       child: const Text(
@@ -84,13 +82,13 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => UserLogin()),
                         );
                       },
                       child: const Text(
-                        "User",
+                        "Login",
                         style: TextStyle(color: Colors.white),
                       ),
                     ),

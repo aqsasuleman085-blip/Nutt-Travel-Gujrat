@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../core/constants/app_constants.dart';
 import '../models/bus_model.dart';
 
@@ -84,28 +85,26 @@ class BusCard extends StatelessWidget {
                   const Icon(Icons.access_time, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    bus.departureTime,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
+                    '${bus.departureAt.hour.toString().padLeft(2, '0')}:${bus.departureAt.minute.toString().padLeft(2, '0')}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                   ),
                   const Spacer(),
                   const Icon(Icons.person, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     bus.driverName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.confirmation_number, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.confirmation_number,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Rs. ${bus.ticketPrice.toStringAsFixed(0)}',
@@ -116,14 +115,15 @@ class BusCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  const Icon(Icons.directions_bus, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.directions_bus,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     bus.numberPlate,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                   ),
                 ],
               ),

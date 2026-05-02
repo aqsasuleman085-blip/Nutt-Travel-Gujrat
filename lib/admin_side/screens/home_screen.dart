@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/admin_side/screens/notification/notification_screen.dart';
 import 'package:provider/provider.dart';
@@ -60,18 +61,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class DashboardTab extends StatelessWidget {
+class DashboardTab extends StatefulWidget {
   const DashboardTab({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<DashboardTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Provider.of<DashboardProvider>(context, listen: false).refreshMetrics();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final dashboardProvider = Provider.of<DashboardProvider>(context);
-
-    // Refresh data when screen is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      dashboardProvider.refreshMetrics();
-    });
+    final bookingProvider = Provider.of<BookingProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -178,10 +189,22 @@ class DashboardTab extends StatelessWidget {
                             iconColor: Colors.orange,
                           ),
                           DashboardCard(
-                            title: 'Total Bookings',
-                            value: dashboardProvider.totalBookings.toString(),
+                            title: 'Approved Bookings',
+                            value: dashboardProvider.approvedBookingsCount.toString(),
                             icon: Icons.book_online,
                             iconColor: Colors.purple,
+                          ),
+                          DashboardCard(
+                            title: 'Pending Requests',
+                            value: bookingProvider.pendingBookings.length.toString(),
+                            icon: Icons.pending_actions,
+                            iconColor: Colors.orange,
+                          ),
+                          DashboardCard(
+                            title: 'Total Bookings',
+                            value: dashboardProvider.totalBookings.toString(),
+                            icon: Icons.receipt_long,
+                            iconColor: Colors.teal,
                           ),
                         ],
                       ),

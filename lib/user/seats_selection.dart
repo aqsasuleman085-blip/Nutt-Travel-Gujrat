@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/user/payment_screen.dart';
 
-/// 🎨 Emerald Theme Colors
+import '../services/realtime_service.dart';
+
 const Color emeraldGreen = Color(0xFF50C878);
 const Color softWhite = Colors.white;
 
-/// 🔥 SEAT SCREEN (EMERALD + WHITE THEME)
 class SeatSelectionScreen extends StatefulWidget {
+  final String busId;
   final String fromCity;
   final String toCity;
   final String time;
   final String date;
-  final String busId;
+  final int fare;
+  final int totalSeats;
 
   const SeatSelectionScreen({
     super.key,
+    required this.busId,
     required this.fromCity,
     required this.toCity,
     required this.time,
     required this.date,
-    this.busId = '',
+    required this.fare,
+    required this.totalSeats,
   });
 
   @override
@@ -27,14 +31,15 @@ class SeatSelectionScreen extends StatefulWidget {
 }
 
 class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
-  Map<int, String> selectedSeats = {};
+  final RealtimeService _realtimeService = RealtimeService();
+
   Set<int> tempSelected = {};
+  final Map<int, String> selectedSeats = {};
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: softWhite,
-
       appBar: AppBar(
         backgroundColor: emeraldGreen,
         elevation: 0,
@@ -44,10 +49,8 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         ),
         centerTitle: true,
       ),
-
       body: Column(
         children: [
-          /// 🔹 INFO CARD
           Container(
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.all(14),
@@ -84,7 +87,6 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             ),
           ),
 
-          /// 🔹 LEGEND
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 10),
             child: Row(
@@ -92,51 +94,78 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
               children: [
                 LegendItem(color: emeraldGreen, text: "Available"),
                 LegendItem(color: Colors.orange, text: "Selected"),
-                LegendItem(color: Colors.blue, text: "Male"),
-                LegendItem(color: Colors.pink, text: "Female"),
+                LegendItem(color: Colors.grey, text: "Booked"),
               ],
             ),
           ),
 
           const SizedBox(height: 10),
 
-          /// 🔹 SEATS GRID
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: 45,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+            child: StreamBuilder<Map<String, dynamic>>(
+              stream: _realtimeService.streamSeatLocks(
+                busId: widget.busId,
+                dateKey: _dateKey(widget.date),
               ),
-              itemBuilder: (context, index) {
-                int seat = index + 1;
+              builder: (context, snapshot) {
+                final data = snapshot.data ?? {};
 
-                Color color = emeraldGreen.withOpacity(0.8);
+                final locks = data['locks'] is Map
+                    ? Map<String, dynamic>.from(data['locks'])
+                    : {};
+                final bookedSeats = data['booked'] is Map
+                    ? Map<String, dynamic>.from(data['booked'])
+                    : {};
 
-                if (tempSelected.contains(seat)) {
-                  color = Colors.orange;
-                }
-                if (selectedSeats[seat] == 'Male') {
-                  color = Colors.blue;
-                }
-                if (selectedSeats[seat] == 'Female') {
-                  color = Colors.pink;
-                }
-
-                return GestureDetector(
-                  onTap: () => _showDialog(seat),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event_seat, size: 28, color: color),
-                      Text(
-                        "$seat",
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                    ],
+                return GridView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: widget.totalSeats,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
                   ),
+                  itemBuilder: (context, index) {
+                    int seat = index + 1;
+
+                    final lock = locks[seat.toString()];
+                    final isLocked =
+                        lock is Map &&
+                        ((lock['expiresAt'] as int? ?? 0) >
+                            DateTime.now().millisecondsSinceEpoch);
+
+                    final isBooked = bookedSeats.containsKey(seat.toString());
+
+                    Color color = emeraldGreen.withOpacity(0.8);
+
+                    if (isBooked) {
+                      color = Colors.grey; // permanently booked
+                    } else if (isLocked) {
+                      color = Colors.grey; // temporarily locked
+                    } else if (tempSelected.contains(seat)) {
+                      color = Colors.orange;
+                    } else if (selectedSeats[seat] == 'Male') {
+                      color = Colors.blue;
+                    } else if (selectedSeats[seat] == 'Female') {
+                      color = Colors.pink;
+                    }
+
+                    return GestureDetector(
+                      onTap: (isLocked || isBooked)
+                          ? null
+                          : () => _selectAndProceed(seat),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_seat, size: 28, color: color),
+                          Text(
+                            "$seat",
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -146,129 +175,36 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     );
   }
 
-  /// 🔥 SEAT DIALOG
-  void _showDialog(int seat) {
-    String? selectedGender;
+  void _selectAndProceed(int seat) {
+    setState(() {
+      tempSelected.add(seat);
+    });
 
-    showDialog(
-      context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setStateDialog) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Seat $seat",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _genderBox(
-                        label: "Male",
-                        color: Colors.blue,
-                        selected: selectedGender == 'Male',
-                        onTap: () {
-                          setStateDialog(() {
-                            selectedGender = 'Male';
-                          });
-                        },
-                      ),
-                      _genderBox(
-                        label: "Female",
-                        color: Colors.pink,
-                        selected: selectedGender == 'Female',
-                        onTap: () {
-                          setStateDialog(() {
-                            selectedGender = 'Female';
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: emeraldGreen,
-                      minimumSize: const Size(double.infinity, 45),
-                    ),
-                    onPressed: () {
-                      if (selectedGender != null) {
-                        setState(() {
-                          selectedSeats[seat] = selectedGender!;
-                        });
-
-                        Navigator.pop(context);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PaymentScreen(
-                              date: "10 Apr 2026",
-                              fromCity: 'jas',
-                              seat: 12,
-                              time: 'sdf',
-                              toCity: widget.toCity,
-                              fare: 23,
-                              busId: widget.busId,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text("Confirm"),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          date: widget.date,
+          fare: widget.fare,
+          busId: widget.busId,
+          busFrom: widget.fromCity,
+          busTo: widget.toCity,
+          departureTime: widget.time,
+          seatNumber: seat.toString(),
+        ),
       ),
     );
   }
 
-  Widget _genderBox({
-    required String label,
-    required Color color,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected ? color : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.black,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
+  String _dateKey(String date) {
+    final parsed = DateTime.tryParse(date);
+    if (parsed == null) return date.replaceAll('/', '-');
+    return '${parsed.year.toString().padLeft(4, '0')}-'
+        '${parsed.month.toString().padLeft(2, '0')}-'
+        '${parsed.day.toString().padLeft(2, '0')}';
   }
 }
 
-/// 🔥 LEGEND WIDGET (UPDATED THEME)
 class LegendItem extends StatelessWidget {
   final Color color;
   final String text;
@@ -281,9 +217,8 @@ class LegendItem extends StatelessWidget {
       children: [
         Icon(Icons.event_seat, size: 18, color: color),
         const SizedBox(height: 4),
-        Text(text, style: const TextStyle(fontSize: 11, color: Colors.black87)),
+        Text(text, style: const TextStyle(fontSize: 11)),
       ],
     );
   }
 }
-//file

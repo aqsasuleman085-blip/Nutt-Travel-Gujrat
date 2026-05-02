@@ -1,101 +1,223 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
+
 import '../models/booking_model.dart';
 
 class BookingProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseDatabase _realtimeDb = FirebaseDatabase.instance;
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
 
   List<BookingModel> _bookings = [];
   bool _isLoading = false;
 
   BookingProvider() {
-    _loadBookings();
+    _listenToBookings();
   }
 
-  // Getters
   List<BookingModel> get bookings => _bookings;
   bool get isLoading => _isLoading;
 
-  List<BookingModel> get pendingBookings => _bookings.where((booking) => booking.status == 'pending').toList();
-  List<BookingModel> get approvedBookings => _bookings.where((booking) => booking.status == 'approved').toList();
-  List<BookingModel> get rejectedBookings => _bookings.where((booking) => booking.status == 'rejected').toList();
+  List<BookingModel> get pendingBookings =>
+      _bookings.where((b) => b.status == 'pending').toList();
 
-  void _loadBookings() {
-    _firestore.collection('bookings').snapshots().listen((snapshot) {
-      _bookings = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return BookingModel.fromMap(data);
-      }).toList();
-      notifyListeners();
-    }, onError: (error) {
-      debugPrint('Error listening to bookings: $error');
-    });
-  }
+  List<BookingModel> get approvedBookings =>
+      _bookings.where((b) => b.status == 'approved').toList();
 
-  Future<void> addBooking({
-    required String userName,
-    required String userEmail,
-    required String busId,
-    required String busFrom,
-    required String busTo,
-    required double price,
-    String? screenshotUrl,
-    String? paymentMethod,
-    String? userUid,
-  }) async {
+  List<BookingModel> get rejectedBookings =>
+      _bookings.where((b) => b.status == 'rejected').toList();
+
+  void _listenToBookings() {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final newBookingData = {
-        'userName': userName,
-        'userEmail': userEmail,
-        'busId': busId,
-        'busFrom': busFrom,
-        'busTo': busTo,
-        'price': price,
-        'screenshotUrl': screenshotUrl,
-        'paymentMethod': paymentMethod,
-        'userUid': userUid,
-        'status': 'pending',
-        'bookingDate': DateTime.now().toIso8601String(),
-        'createdAt': DateTime.now().toIso8601String(),
-      };
+    _subscription = _firestore
+        .collection('bookings')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            _bookings = snapshot.docs.map((doc) {
+              return BookingModel.fromMap({'id': doc.id, ...doc.data()});
+            }).toList();
 
-      await _firestore.collection('bookings').add(newBookingData);
-    } catch (e) {
-      debugPrint('Error adding booking: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+            _isLoading = false;
+            notifyListeners();
+          },
+          onError: (e) {
+            debugPrint('🔥 Firestore error: $e');
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
+  /// 🔥 APPROVE BOOKING (CRITICAL FIXES INCLUDED)
   Future<void> approveBooking(String bookingId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
     try {
-      await _firestore.collection('bookings').doc(bookingId).update({'status': 'approved'});
+      final doc = await _firestore.collection('bookings').doc(bookingId).get();
+
+      if (!doc.exists) {
+        throw Exception('Booking not found');
+      }
+
+      final booking = BookingModel.fromMap({'id': doc.id, ...doc.data()!});
+
+      final dateKey = _dateKey(
+        booking.travelDate.isNotEmpty
+            ? booking.travelDate
+            : booking.bookingDate.toIso8601String(),
+      );
+
+      /// ❌ prevent double approval
+      if (booking.status == 'approved') {
+        throw Exception('Already approved');
+      }
+
+      /// 🔥 1. Update Firestore
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'status': 'approved',
+        'updatedAt': now,
+      });
+
+      /// 🔥 2. Save booked seat permanently
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/booked/${booking.seatNumber}',
+          )
+          .set({"bookedBy": booking.userId, "bookedAt": now});
+
+      /// 🔥 3. Remove lock if exists
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/locks/${booking.seatNumber}',
+          )
+          .remove();
+
+      /// 🔥 4. Booking status realtime
+      await _realtimeDb.ref('booking_status/$bookingId').set({
+        'status': 'approved',
+        'updatedAt': now,
+      });
+
+      /// 🔥 5. Update booking_requests mirror
+      await _realtimeDb.ref('booking_requests/$bookingId').update({
+        'status': 'approved',
+        'updatedAt': now,
+      });
+
+      /// 🔥 6. Notification
+      await _realtimeDb.ref('notifications/${booking.userId}').push().set({
+        'title': 'Booking Approved',
+        'message':
+            'Seat ${booking.seatNumber} for ${booking.busFrom} → ${booking.busTo} confirmed',
+        'type': 'booking',
+        'isRead': false,
+        'createdAt': now,
+      });
     } catch (e) {
-      debugPrint('Error approving booking: $e');
+      debugPrint('❌ Approve error: $e');
+      rethrow;
     }
   }
 
+  /// 🔥 REJECT BOOKING (CRITICAL FIXES INCLUDED)
   Future<void> rejectBooking(String bookingId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
     try {
-      await _firestore.collection('bookings').doc(bookingId).update({'status': 'rejected'});
+      final doc = await _firestore.collection('bookings').doc(bookingId).get();
+
+      if (!doc.exists) {
+        throw Exception('Booking not found');
+      }
+
+      final booking = BookingModel.fromMap({'id': doc.id, ...doc.data()!});
+
+      final dateKey = _dateKey(
+        booking.travelDate.isNotEmpty
+            ? booking.travelDate
+            : booking.bookingDate.toIso8601String(),
+      );
+
+      /// ❌ prevent double reject
+      if (booking.status == 'rejected') {
+        throw Exception('Already rejected');
+      }
+
+      /// 🔥 1. Update Firestore
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'status': 'rejected',
+        'updatedAt': now,
+      });
+
+      /// 🔥 2. Release locked/booked seat (IMPORTANT)
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/locks/${booking.seatNumber}',
+          )
+          .remove();
+
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/booked/${booking.seatNumber}',
+          )
+          .remove();
+
+      /// 🔥 3. Booking status realtime
+      await _realtimeDb.ref('booking_status/$bookingId').set({
+        'status': 'rejected',
+        'updatedAt': now,
+      });
+
+      /// 🔥 4. Update booking_requests mirror
+      await _realtimeDb.ref('booking_requests/$bookingId').update({
+        'status': 'rejected',
+        'updatedAt': now,
+      });
+
+      /// 🔥 5. Notification
+      await _realtimeDb.ref('notifications/${booking.userId}').push().set({
+        'title': 'Booking Rejected',
+        'message':
+            'Seat ${booking.seatNumber} for ${booking.busFrom} → ${booking.busTo} was rejected',
+        'type': 'booking',
+        'isRead': false,
+        'createdAt': now,
+      });
     } catch (e) {
-      debugPrint('Error rejecting booking: $e');
+      debugPrint('❌ Reject error: $e');
+      rethrow;
     }
   }
 
   double get totalEarnings {
-    return approvedBookings.fold(0.0, (sum, booking) => sum + booking.price);
+    return approvedBookings.fold(0.0, (sum, b) => sum + b.price);
+  }
+
+  String _dateKey(String date) {
+    final parsed = DateTime.tryParse(date);
+    if (parsed == null) return date.replaceAll('/', '-');
+    return '${parsed.year.toString().padLeft(4, '0')}-'
+        '${parsed.month.toString().padLeft(2, '0')}-'
+        '${parsed.day.toString().padLeft(2, '0')}';
   }
 
   int get totalBookings => _bookings.length;
 
   int get uniqueUsersCount {
-    final uniqueEmails = _bookings.map((booking) => booking.userEmail).toSet();
-    return uniqueEmails.length;
+    return _bookings.map((b) => b.userId).toSet().length;
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 }

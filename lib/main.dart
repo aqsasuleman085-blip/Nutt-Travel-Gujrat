@@ -1,5 +1,4 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/core/constants/app_constants.dart';
 import 'package:nutt/admin_side/providers/auth_provider.dart';
@@ -7,33 +6,18 @@ import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/providers/bus_provider.dart';
 import 'package:nutt/admin_side/providers/dashboard_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
+import 'package:nutt/firebase_options.dart';
 import 'package:nutt/welcome_screen.dart';
 import 'package:provider/provider.dart';
 
-//file
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (kIsWeb) {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyB7EuxWgstYll8_IeYMObk-Py9UkUvQvHc",
-        authDomain: "nutt-setup.firebaseapp.com",
-        projectId: "nutt-setup",
-        storageBucket: "nutt-setup.firebasestorage.app",
-        messagingSenderId: "788481227164",
-        appId: "1:788481227164:web:e4fca5b41e40ff89a7b059",
-      ),
-    );
-  } else {
-    await Firebase.initializeApp();
-  }
-
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

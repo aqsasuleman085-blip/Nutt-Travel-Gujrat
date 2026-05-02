@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/admin_side/core/constants/app_constants.dart';
+import 'package:nutt/admin_side/providers/booking_provider.dart';
+import 'package:nutt/admin_side/widgets/booking_card.dart';
+import 'package:nutt/admin_side/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/app_constants.dart';
-import '../../providers/booking_provider.dart';
-import '../../widgets/booking_card.dart';
-import '../../widgets/loading_widget.dart';
+
+import '../../models/booking_model.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -12,8 +14,10 @@ class BookingScreen extends StatefulWidget {
   State<BookingScreen> createState() => _BookingScreenState();
 }
 
-class _BookingScreenState extends State<BookingScreen> with SingleTickerProviderStateMixin {
+class _BookingScreenState extends State<BookingScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String? _processingId;
 
   @override
   void initState() {
@@ -27,16 +31,82 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
     super.dispose();
   }
 
+  Future<void> _handleAction({
+    required Future<void> Function() action,
+    required String bookingId,
+    required String successMessage,
+  }) async {
+    try {
+      setState(() => _processingId = bookingId);
+
+      await action();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Operation failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _processingId = null);
+      }
+    }
+  }
+
+  Future<bool> _showConfirmDialog({
+    required String title,
+    required String message,
+    required Color confirmColor,
+    required String confirmText,
+  }) async {
+    if (!mounted) return false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: confirmColor),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              confirmText,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<BookingProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Booking Management'),
         bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
           labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: const Color.fromARGB(255, 255, 255, 255),
+          unselectedLabelColor: Colors.white54,
+          controller: _tabController,
           tabs: const [
             Tab(text: 'Pending'),
             Tab(text: 'Approved'),
@@ -44,161 +114,136 @@ class _BookingScreenState extends State<BookingScreen> with SingleTickerProvider
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildBookingsList(context, 'pending'),
-          _buildBookingsList(context, 'approved'),
-          _buildBookingsList(context, 'rejected'),
-        ],
-      ),
+      body: provider.isLoading
+          ? const LoadingWidget(message: 'Loading...')
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildList(provider.pendingBookings, 'pending'),
+                _buildList(provider.approvedBookings, 'approved'),
+                _buildList(provider.rejectedBookings, 'rejected'),
+              ],
+            ),
     );
   }
 
-  Widget _buildBookingsList(BuildContext context, String status) {
-    return Consumer<BookingProvider>(
-      builder: (context, bookingProvider, child) {
-        List bookings;
-        String emptyMessage;
+  Widget _buildList(List<BookingModel> bookings, String status) {
+    if (bookings.isEmpty) {
+      return Center(child: Text('No $status bookings'));
+    }
 
-        switch (status) {
-          case 'pending':
-            bookings = bookingProvider.pendingBookings;
-            emptyMessage = 'No pending bookings';
-            break;
-          case 'approved':
-            bookings = bookingProvider.approvedBookings;
-            emptyMessage = 'No approved bookings';
-            break;
-          case 'rejected':
-            bookings = bookingProvider.rejectedBookings;
-            emptyMessage = 'No rejected bookings';
-            break;
-          default:
-            bookings = [];
-            emptyMessage = 'No bookings found';
-        }
+    return ListView.builder(
+      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+      itemCount: bookings.length,
+      itemBuilder: (context, index) {
+        final booking = bookings[index];
+        final isProcessing = _processingId == booking.id;
 
-        if (bookingProvider.isLoading) {
-          return const LoadingWidget(message: 'Loading bookings...');
-        }
+        return Stack(
+          children: [
+            BookingCard(
+              booking: booking,
+              onTap: () => _showDetails(booking),
+              onApprove: status == 'pending'
+                  ? () async {
+                      final confirmed = await _showConfirmDialog(
+                        title: 'Approve Booking',
+                        message:
+                            'Approve booking for ${booking.userName} (Seat ${booking.seatNumber})?',
+                        confirmColor: Colors.green,
+                        confirmText: 'Approve',
+                      );
+                      if (!confirmed) return;
 
-        if (bookings.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  status == 'pending' 
-                    ? Icons.pending_actions 
-                    : status == 'approved' 
-                      ? Icons.check_circle 
-                      : Icons.cancel,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  emptyMessage,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
+                      await _handleAction(
+                        bookingId: booking.id,
+                        action: () => context
+                            .read<BookingProvider>()
+                            .approveBooking(booking.id),
+                        successMessage: 'Booking Approved ✓',
+                      );
+                    }
+                  : null,
+              onReject: status == 'pending'
+                  ? () async {
+                      final confirmed = await _showConfirmDialog(
+                        title: 'Reject Booking',
+                        message:
+                            'Reject booking for ${booking.userName} (Seat ${booking.seatNumber})?',
+                        confirmColor: Colors.red,
+                        confirmText: 'Reject',
+                      );
+                      if (!confirmed) return;
+
+                      await _handleAction(
+                        bookingId: booking.id,
+                        action: () => context
+                            .read<BookingProvider>()
+                            .rejectBooking(booking.id),
+                        successMessage: 'Booking Rejected ✗',
+                      );
+                    }
+                  : null,
             ),
-          );
-        }
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            // Refresh is handled by the provider
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.defaultPadding),
-            child: ListView.builder(
-              itemCount: bookings.length,
-              itemBuilder: (context, index) {
-                final booking = bookings[index];
-                return BookingCard(
-                  booking: booking,
-                  onTap: () {
-                    _showBookingDetails(context, booking);
-                  },
-                  onApprove: status == 'pending' ? () {
-                    bookingProvider.approveBooking(booking.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Booking approved'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } : null,
-                  onReject: status == 'pending' ? () {
-                    bookingProvider.rejectBooking(booking.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Booking rejected'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  } : null,
-                );
-              },
-            ),
-          ),
+            if (isProcessing)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
         );
       },
     );
   }
 
-  void _showBookingDetails(BuildContext context, booking) {
+  void _showDetails(BookingModel booking) {
+    if (!mounted) return;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Booking Details - ${booking.userName}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('User Name', booking.userName),
-            _buildDetailRow('Email', booking.userEmail),
-            _buildDetailRow('Route', '${booking.busFrom} → ${booking.busTo}'),
-            _buildDetailRow('Price', 'Rs. ${booking.price.toStringAsFixed(0)}'),
-            _buildDetailRow('Status', booking.status),
-            _buildDetailRow('Booking Date', '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}'),
-            _buildDetailRow('Created On', '${booking.createdAt.day}/${booking.createdAt.month}/${booking.createdAt.year}'),
-          ],
+      builder: (dialogContext) => AlertDialog(
+        title: Text("Booking - ${booking.userName}"),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _row("Name", booking.userName),
+              _row("Phone", booking.phone),
+              _row("CNIC", booking.cnic),
+              _row("Seat", booking.seatNumber),
+              _row("Route", "${booking.busFrom} → ${booking.busTo}"),
+              _row("Date", booking.travelDate),
+              _row("Amount", "Rs ${booking.totalAmount}"),
+              _row("Status", booking.status),
+            ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text("Close"),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _row(String k, String v) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 110,
             child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstants.darkGreen,
-              ),
+              "$k:",
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(v)),
         ],
       ),
     );

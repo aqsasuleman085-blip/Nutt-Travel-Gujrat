@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nutt/admin_side/models/booking_model.dart';
+
+import '../services/booking_service.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -10,43 +11,113 @@ class TicketsScreen extends StatefulWidget {
 }
 
 class _TicketsScreenState extends State<TicketsScreen> {
-  final Color themeColor = const Color(0xff10B981);
+  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
 
-  Widget buildStatus(String status) {
-    Color color;
-    IconData? icon;
+  final Color themeColor = const Color(0xff10B981); // Emerald Green
+  final BookingService _bookingService = BookingService();
 
-    switch (status) {
-      case "approved":
-        color = Colors.green;
-        icon = Icons.check_circle;
-        break;
-      case "rejected":
-        color = Colors.red;
-        icon = Icons.cancel;
-        break;
-      default:
-        color = Colors.orange;
-        icon = Icons.pending;
+  /// Returns true if the travel date is today or in the future.
+  /// Uses travelDate (string "YYYY-MM-DD") if available, otherwise bookingDate.
+  bool _isUpcoming(BookingModel booking) {
+    try {
+      final today = DateTime.now();
+      // Prefer travelDate (string like "2026-04-28")
+      if (booking.travelDate.isNotEmpty) {
+        final travelDate = DateTime.parse(booking.travelDate);
+        return travelDate.isAfter(today.subtract(const Duration(days: 1)));
+      }
+      // Fallback to bookingDate (DateTime)
+      return booking.bookingDate.isAfter(
+        today.subtract(const Duration(days: 1)),
+      );
+    } catch (e) {
+      return false;
     }
+  }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(width: 4),
-        Text(
-          status.toUpperCase(),
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.bold,
+  /// Shows full booking details in a dialog
+  void _showDetailsDialog(BuildContext context, BookingModel booking) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Ticket Details - ${booking.seatNumber}'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _detailRow('Passenger', booking.userName),
+              _detailRow('Email', booking.userEmail),
+              const Divider(),
+              _detailRow('Route', '${booking.busFrom} → ${booking.busTo}'),
+              _detailRow('Seat', booking.seatNumber),
+              _detailRow(
+                'Travel Date',
+                booking.travelDate.isNotEmpty
+                    ? booking.travelDate
+                    : _formatDate(booking.bookingDate),
+              ),
+              _detailRow('Booking Date', _formatDate(booking.bookingDate)),
+              const Divider(),
+              _detailRow('Price', 'Rs ${booking.price.toStringAsFixed(0)}'),
+              _detailRow('Payment Method', booking.paymentMethod),
+              _detailRow(
+                'Transaction Ref',
+                booking.paymentReference.isNotEmpty
+                    ? booking.paymentReference
+                    : 'N/A',
+              ),
+              const Divider(),
+              _detailRow('Booking ID', booking.id),
+              _detailRow('Status', booking.status.toUpperCase()),
+            ],
           ),
         ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget buildTicketCard(Map<String, dynamic> ticket, String ticketId) {
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget buildTicketCard(BookingModel booking) {
+    final statusColor = booking.status == 'approved'
+        ? Colors.green
+        : booking.status == 'rejected'
+        ? Colors.red
+        : Colors.orange;
+
+    // Display travel date if available, otherwise fallback to booking date
+    final displayDate = booking.travelDate.isNotEmpty
+        ? booking.travelDate
+        : _formatDate(booking.bookingDate);
+
     return Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(
@@ -61,7 +132,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Nutt Coach Service",
+              'Ticket ${booking.id.substring(0, 6)}...',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -70,90 +141,154 @@ class _TicketsScreenState extends State<TicketsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "${ticket["busFrom"]} → ${ticket["busTo"]}",
+              '${booking.busFrom} → ${booking.busTo}',
               style: const TextStyle(fontSize: 15, color: Colors.black87),
             ),
             const SizedBox(height: 8),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Date: ${ticket["date"]}",
+                  "Date: $displayDate",
                   style: const TextStyle(color: Colors.grey),
                 ),
                 Text(
-                  "Time: ${ticket["time"]}",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 5),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Seat: ${ticket["seat"]}",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                Flexible(
-                  child: Text(
-                    "ID: $ticketId",
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  booking.status.toUpperCase(),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 12),
-
-            // 🔹 STATUS
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                 Text(
-                  "Fare: Rs ${ticket["price"]}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Text(
+                  "Seat: ${booking.seatNumber}",
+                  style: const TextStyle(color: Colors.grey),
                 ),
-                buildStatus(ticket["status"] ?? "pending"),
+                Text(
+                  "Rs ${booking.price.toStringAsFixed(0)}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ],
-            )
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => _showDetailsDialog(context, booking),
+                  child: const Text("View"),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget buildTopButton() {
+  Widget getCurrentScreen() {
+    return StreamBuilder<List<BookingModel>>(
+      stream: _bookingService.streamUserBookings(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 8),
+                Text('Error: ${snapshot.error}'),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => setState(() {}),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final allBookings = snapshot.data ?? [];
+
+        if (allBookings.isEmpty) {
+          return const Center(
+            child: Text(
+              'No tickets available',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        // Filter based on selected tab (Upcoming / Past)
+        final filteredBookings = selectedIndex == 0
+            ? allBookings.where(_isUpcoming).toList()
+            : allBookings.where((b) => !_isUpcoming(b)).toList();
+
+        // if (filteredBookings.isEmpty) {
+        //   return Center(
+        //     child: Text(
+        //       selectedIndex == 0 ? 'No upcoming tickets' : 'No past tickets',
+        //       style: const TextStyle(color: Colors.grey),
+        //     ),
+        //   );
+        // }
+
+        return ListView.builder(
+          itemCount: filteredBookings.length,
+          itemBuilder: (context, index) {
+            return buildTicketCard(filteredBookings[index]);
+          },
+        );
+      },
+    );
+  }
+
+  Widget buildTopButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: themeColor,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {},
-              child: const Text("My Tickets"),
-            ),
-          ),
-        ],
+      child: Row(children: [buildButton("Upcoming", 0)]),
+    );
+  }
+
+  Widget buildButton(String text, int index) {
+    bool isSelected = selectedIndex == index;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        // child: ElevatedButton(
+        //   style: ElevatedButton.styleFrom(
+        //     backgroundColor: isSelected ? themeColor : Colors.grey.shade300,
+        //     foregroundColor: isSelected ? Colors.white : Colors.black,
+        //   ),
+        //   onPressed: () {
+        //     setState(() {
+        //       selectedIndex = index;
+        //     });
+        //   },
+        //   child: Text(text),
+        // ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final userUid = FirebaseAuth.instance.currentUser?.uid;
-
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -168,50 +303,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
         ),
         iconTheme: IconThemeData(color: themeColor),
       ),
-
       body: Column(
         children: [
-          buildTopButton(),
-          Expanded(
-            child: userUid == null
-                ? const Center(child: Text("Please log in to view tickets"))
-                : StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('bookings')
-                        .where('userUid', isEqualTo: userUid)
-                        .orderBy('createdAt', descending: true)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.hasError) {
-                        return const Center(child: Text("Error fetching tickets"));
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            "No tickets available",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        );
-                      }
-
-                      final tickets = snapshot.data!.docs;
-
-                      return ListView.builder(
-                        itemCount: tickets.length,
-                        itemBuilder: (context, index) {
-                          final doc = tickets[index];
-                          final data = doc.data() as Map<String, dynamic>;
-                          return buildTicketCard(data, doc.id);
-                        },
-                      );
-                    },
-                  ),
-          ),
+          buildTopButtons(),
+          Expanded(child: getCurrentScreen()),
         ],
       ),
     );
