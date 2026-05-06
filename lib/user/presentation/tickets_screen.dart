@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
 
-import '../services/booking_service.dart';
+import '../../services/booking_service.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});

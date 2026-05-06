@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nutt/admin_side/widgets/custom_text_field.dart';
 import 'package:nutt/admin_side/widgets/loading_widget.dart';
-import 'package:nutt/user/home_screen.dart';
+import 'package:nutt/user/presentation/home_screen.dart';
 
-import '../services/booking_service.dart';
+import '../../services/booking_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String busId;

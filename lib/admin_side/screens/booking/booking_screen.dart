@@ -3,9 +3,11 @@ import 'package:nutt/admin_side/core/constants/app_constants.dart';
 import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/widgets/booking_card.dart';
 import 'package:nutt/admin_side/widgets/loading_widget.dart';
+import 'package:nutt/services/notification_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/booking_model.dart';
+
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -144,6 +146,8 @@ class _BookingScreenState extends State<BookingScreen>
             BookingCard(
               booking: booking,
               onTap: () => _showDetails(booking),
+
+              // APPROVE
               onApprove: status == 'pending'
                   ? () async {
                       final confirmed = await _showConfirmDialog(
@@ -153,6 +157,7 @@ class _BookingScreenState extends State<BookingScreen>
                         confirmColor: Colors.green,
                         confirmText: 'Approve',
                       );
+
                       if (!confirmed) return;
 
                       await _handleAction(
@@ -162,8 +167,17 @@ class _BookingScreenState extends State<BookingScreen>
                             .approveBooking(booking.id),
                         successMessage: 'Booking Approved ✓',
                       );
+
+                      await AdminNotificationService().sendNotification(
+                        uid: booking.userId,
+                        title: "Ticket Approved",
+                        message: 
+                        "${booking.userName}, your seat #${booking.seatNumber} from ${booking.busFrom} to ${booking.busTo} has been approved.",
+                      );
                     }
                   : null,
+
+              // REJECT
               onReject: status == 'pending'
                   ? () async {
                       final confirmed = await _showConfirmDialog(
@@ -173,6 +187,7 @@ class _BookingScreenState extends State<BookingScreen>
                         confirmColor: Colors.red,
                         confirmText: 'Reject',
                       );
+
                       if (!confirmed) return;
 
                       await _handleAction(
@@ -181,6 +196,13 @@ class _BookingScreenState extends State<BookingScreen>
                             .read<BookingProvider>()
                             .rejectBooking(booking.id),
                         successMessage: 'Booking Rejected ✗',
+                      );
+
+                      await AdminNotificationService().sendNotification(
+                        uid: booking.userId,
+                        title: "Ticket Rejected",
+                        message: 
+                        "${booking.userName}, your ticket #${booking.seatNumber} from ${booking.busFrom} to ${booking.busTo} has been approved.",
                       );
                     }
                   : null,

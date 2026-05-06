@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/user/bus_schedule.dart';
-import 'package:nutt/user/profile_screen.dart';
-import 'package:nutt/user/tickets_screen.dart';
+import 'package:nutt/user/presentation/bus_schedule.dart';
+import 'package:nutt/user/presentation/profile_screen.dart';
+import 'package:nutt/user/presentation/tickets_screen.dart';
+import 'notification_screen.dart';
 
-import '../services/bus_service.dart';
+import '../../services/bus_service.dart';
 
 // 🔹 MAIN HOME SCREEN
 class HomeScreen extends StatefulWidget {
@@ -255,16 +256,21 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                         ],
                       ),
-                      // IconButton(
-                      //   icon: Icon(
-                      //     Icons.notifications_none,
-                      //     size: 28,
-                      //     color: themeColor,
-                      //   ),
-                      //   onPressed: () {
-                      //     widget.onTabChange(2);
-                      //   },
-                      // ),
+                      IconButton(
+                       icon: Icon(
+                         Icons.notifications_none,
+                          size: 28,
+                          color: themeColor,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationsScreen(),
+                               ),
+                                );
+                                },
+                       ),
                     ],
                   ),
                 ),

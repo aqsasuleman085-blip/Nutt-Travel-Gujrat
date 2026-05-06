@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/admin_login.dart';
-import 'package:nutt/user/login.dart';
-import 'package:nutt/user/seats_selection.dart';
+import 'package:nutt/user/presentation/login.dart';
+import 'package:nutt/user/presentation/seats_selection.dart';
 
 // / 🔹 WELCOME SCREEN (WHITE + EMERALD)
 class WelcomeScreen extends StatelessWidget {

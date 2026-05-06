@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../services/bus_service.dart';
+import '../../services/bus_service.dart';
 import 'seats_selection.dart';
 
 class BusScheduleScreen extends StatefulWidget {

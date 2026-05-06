@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:nutt/user/payment_screen.dart';
+import 'package:nutt/user/presentation/payment_screen.dart';
 
-import '../services/realtime_service.dart';
+import '../../services/realtime_service.dart';
 
 const Color emeraldGreen = Color(0xFF50C878);
 const Color softWhite = Colors.white;
