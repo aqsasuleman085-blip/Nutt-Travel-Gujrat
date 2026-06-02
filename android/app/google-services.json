@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "338035775553",
+    "firebase_url": "https://nutttravel-default-rtdb.firebaseio.com",
+    "project_id": "nutttravel",
+    "storage_bucket": "nutttravel.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338035775553:android:668b87561349e1b661cec0",
+        "android_client_info": {
+          "package_name": "com.example.nutt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "338035775553-a9ku5317v6o7rb6shkroqquh9k0kuspe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGkIN-N0PFM1ppNDXR2Bsg4y6PHWAn7zM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "338035775553-a9ku5317v6o7rb6shkroqquh9k0kuspe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "338035775553-tj5m4rs4horer165n9fjcr6vrsa94fst.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.nutt"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

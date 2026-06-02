@@ -1,0 +1,386 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../admin_side/models/booking_model.dart';
+
+class BookingService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseDatabase _realtimeDb = FirebaseDatabase.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// ✅ UNIFIED REFUND METHOD - Always sets status to 'refund_pending' first
+  Future<void> processRefund({
+    required String bookingId,
+    required String userId,
+    required double amount,
+    required String seatNumber,
+    required String route,
+    required String paymentMethod,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+    if (user.uid != userId) throw Exception('User ID mismatch');
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final isCashPayment = paymentMethod.toLowerCase().contains('cash');
+
+    try {
+      // Start a Firestore batch for atomic operations
+      final batch = _firestore.batch();
+
+      // 1. Create refund request document (for audit trail)
+      final refundRef = _firestore.collection('refund_requests').doc();
+      batch.set(refundRef, {
+        'refundId': refundRef.id,
+        'bookingId': bookingId,
+        'userId': userId,
+        'userEmail': user.email ?? '',
+        'amount': amount,
+        'seatNumber': seatNumber,
+        'route': route,
+        'paymentMethod': paymentMethod,
+        'status': 'refund_pending', // Always pending first
+        'isCashPayment': isCashPayment,
+        'processedAt': null, // Not processed yet
+        'createdAt': now,
+        'updatedAt': now,
+      });
+
+      // 2. Update booking status in Firestore to 'refund_pending'
+      final bookingRef = _firestore.collection('bookings').doc(bookingId);
+      batch.update(bookingRef, {
+        'status': 'refund_pending',
+        'refundStatus': 'refund_pending',
+        'refundRequestedAt': now,
+        'refundAmount': amount,
+        'paymentMethod': paymentMethod,
+        'updatedAt': now,
+      });
+
+      // Commit batch operation
+      await batch.commit();
+
+      // 3. Sync to Realtime Database (for admin panel)
+      await _realtimeDb.ref('booking_status/$bookingId').set({
+        'status': 'refund_pending',
+        'refundStatus': 'refund_pending',
+        'updatedAt': now,
+      });
+
+      // 4. Sync refund request to Realtime Database
+      await _realtimeDb.ref('refund_requests/${refundRef.id}').set({
+        'refundId': refundRef.id,
+        'bookingId': bookingId,
+        'userId': userId,
+        'userEmail': user.email ?? '',
+        'amount': amount,
+        'seatNumber': seatNumber,
+        'route': route,
+        'paymentMethod': paymentMethod,
+        'status': 'refund_pending',
+        'isCashPayment': isCashPayment,
+        'processedAt': null,
+        'createdAt': now,
+        'updatedAt': now,
+      });
+
+      // 5. Create admin notification for all refund requests
+      await _realtimeDb.ref('admin_notifications').push().set({
+        'title': 'New Refund Request',
+        'message': 'Refund requested for seat $seatNumber ($route) - Amount: Rs ${amount.toStringAsFixed(0)}',
+        'type': 'refund_pending',
+        'refundId': refundRef.id,
+        'bookingId': bookingId,
+        'isRead': false,
+        'createdAt': now,
+      });
+
+    } catch (e) {
+      throw Exception('Failed to process refund: $e');
+    }
+  }
+
+  /// ✅ ADMIN METHOD: Approve pending refund (for all payments)
+  Future<void> approveRefund(String refundId, String bookingId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    try {
+      final batch = _firestore.batch();
+
+      // Update refund request status
+      final refundRef = _firestore.collection('refund_requests').doc(refundId);
+      batch.update(refundRef, {
+        'status': 'refunded',
+        'approvedAt': now,
+        'updatedAt': now,
+      });
+
+      // Update booking status
+      final bookingRef = _firestore.collection('bookings').doc(bookingId);
+      batch.update(bookingRef, {
+        'status': 'refunded',
+        'refundStatus': 'refunded',
+        'refundApprovedAt': now,
+        'updatedAt': now,
+      });
+
+      await batch.commit();
+
+      // Sync to Realtime Database
+      await _realtimeDb.ref('booking_status/$bookingId').update({
+        'status': 'refunded',
+        'refundStatus': 'refunded',
+        'updatedAt': now,
+      });
+
+      await _realtimeDb.ref('refund_requests/$refundId').update({
+        'status': 'refunded',
+        'approvedAt': now,
+        'updatedAt': now,
+      });
+
+      // Send notification to user
+      await _realtimeDb.ref('user_notifications').push().set({
+        'userId': (await bookingRef.get()).data()?['userId'],
+        'title': 'Refund Approved',
+        'message': 'Your refund has been approved and processed.',
+        'type': 'refund_approved',
+        'bookingId': bookingId,
+        'isRead': false,
+        'createdAt': now,
+      });
+    } catch (e) {
+      throw Exception('Failed to approve refund: $e');
+    }
+  }
+
+  /// ✅ ADMIN METHOD: Reject pending refund
+  Future<void> rejectRefund(String refundId, String bookingId, String reason) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    try {
+      final batch = _firestore.batch();
+
+      // Update refund request
+      final refundRef = _firestore.collection('refund_requests').doc(refundId);
+      batch.update(refundRef, {
+        'status': 'rejected',
+        'rejectionReason': reason,
+        'rejectedAt': now,
+        'updatedAt': now,
+      });
+
+      // Revert booking status back to original
+      final bookingRef = _firestore.collection('bookings').doc(bookingId);
+      batch.update(bookingRef, {
+        'status': 'approved', // Assuming original status was approved
+        'refundStatus': 'rejected',
+        'refundRejectedAt': now,
+        'refundRejectionReason': reason,
+        'updatedAt': now,
+      });
+
+      await batch.commit();
+
+      // Sync to Realtime Database
+      await _realtimeDb.ref('booking_status/$bookingId').update({
+        'status': 'approved',
+        'refundStatus': 'rejected',
+        'updatedAt': now,
+      });
+
+      // Send notification to user
+      await _realtimeDb.ref('user_notifications').push().set({
+        'userId': (await bookingRef.get()).data()?['userId'],
+        'title': 'Refund Rejected',
+        'message': 'Your refund request was rejected. Reason: $reason',
+        'type': 'refund_rejected',
+        'bookingId': bookingId,
+        'isRead': false,
+        'createdAt': now,
+      });
+    } catch (e) {
+      throw Exception('Failed to reject refund: $e');
+    }
+  }
+
+  /// ✅ UPDATE BOOKING STATUS (General purpose)
+  Future<void> updateBookingStatus(
+    String bookingId,
+    Map<String, dynamic> data,
+  ) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    try {
+      // Firestore update
+      await _firestore.collection('bookings').doc(bookingId).update({
+        ...data,
+        'updatedAt': now,
+      });
+
+      // Realtime DB sync
+      if (data.containsKey('status')) {
+        await _realtimeDb.ref('booking_status/$bookingId').set({
+          'status': data['status'],
+          'updatedAt': now,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to update booking status: $e');
+    }
+  }
+
+  /// ✅ STREAM USER BOOKINGS with real-time updates
+  Stream<List<BookingModel>> streamUserBookings() {
+    final user = _auth.currentUser;
+
+    if (user == null) return const Stream.empty();
+
+    return _firestore
+        .collection('bookings')
+        .where('userId', isEqualTo: user.uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return BookingModel.fromMap({'id': doc.id, ...doc.data()});
+          }).toList();
+        });
+  }
+
+  /// ✅ GET SINGLE BOOKING by ID
+  Future<BookingModel?> getBookingById(String bookingId) async {
+    try {
+      final doc = await _firestore.collection('bookings').doc(bookingId).get();
+      if (doc.exists) {
+        return BookingModel.fromMap({'id': doc.id, ...doc.data()!});
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get booking: $e');
+    }
+  }
+
+  /// ✅ CHECK IF REFUND IS ELIGIBLE (Server-side validation)
+  Future<bool> checkRefundEligibility(String bookingId) async {
+    try {
+      final booking = await getBookingById(bookingId);
+      if (booking == null) return false;
+
+      // Already refunded or pending
+      if (booking.status == 'refunded' || booking.status == 'refund_pending') {
+        return false;
+      }
+
+      final now = DateTime.now();
+      if (booking.travelDate.isEmpty) return false;
+
+      final travelDate = DateTime.parse(booking.travelDate);
+      DateTime? ticketTime;
+
+      if (booking.time.isNotEmpty) {
+        final parts = booking.time.split(':');
+        final hour = int.tryParse(parts[0]) ?? 0;
+        final minute = int.tryParse(parts[1]) ?? 0;
+        ticketTime = DateTime(
+          travelDate.year, 
+          travelDate.month, 
+          travelDate.day, 
+          hour, 
+          minute,
+        );
+      }
+
+      if (ticketTime == null) return false;
+      
+      final diff = ticketTime.difference(now);
+      return diff.isNegative ? false : diff > const Duration(hours: 12);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// ✅ CREATE BOOKING (with proper structure)
+  Future<String?> createBooking({
+    required String name,
+    required String phone,
+    required String cnic,
+    required String gender,
+    required String busId,
+    required String from,
+    required String to,
+    required String seat,
+    required String date,
+    required String time,
+    required double totalAmount,
+    required String paymentMethod,
+    required String senderName,
+    required String senderNumber,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final dateKey = _dateKey(date);
+
+    // Check if seat is already booked
+    final bookedSnap = await _realtimeDb
+        .ref('seat_data/$busId/$dateKey/booked/$seat')
+        .get();
+
+    if (bookedSnap.exists) {
+      throw Exception('Seat already booked');
+    }
+
+    final docRef = _firestore.collection('bookings').doc();
+    final bookingData = {
+      'bookingId': docRef.id,
+      'id': docRef.id,
+      'userId': user.uid,
+      'userName': name,
+      'userEmail': user.email ?? '',
+      'userPhone': phone,
+      'userCnic': cnic,
+      'userGender': gender,
+      'busId': busId,
+      'busFrom': from,
+      'busTo': to,
+      'seatNumber': seat,
+      'travelDate': date,
+      'time': time,
+      'paymentMethod': paymentMethod,
+      'senderName': senderName,
+      'senderNumber': senderNumber,
+      'paidAmount': totalAmount,
+      'totalAmount': totalAmount,
+      'price': totalAmount,
+      'paymentReference': '',
+      'status': 'pending',
+      'refundStatus': 'none',
+      'createdAt': now,
+      'updatedAt': now,
+      'bookingDate': Timestamp.now(),
+    };
+
+    await docRef.set(bookingData);
+
+    // Sync to Realtime Database
+    await _realtimeDb.ref('booking_status/${docRef.id}').set({
+      'status': 'pending',
+      'refundStatus': 'none',
+      'updatedAt': now,
+    });
+
+    return docRef.id;
+  }
+
+  /// ✅ HELPER: Format date key for Realtime DB
+  String _dateKey(String date) {
+    final parsed = DateTime.tryParse(date);
+    if (parsed == null) return date.replaceAll('/', '-');
+
+    return '${parsed.year.toString().padLeft(4, '0')}-'
+        '${parsed.month.toString().padLeft(2, '0')}-'
+        '${parsed.day.toString().padLeft(2, '0')}';
+  }
+}
