@@ -1,21 +1,316 @@
-<<<<<<< HEAD
-# Nutt-Travel-Gujrat
-=======
-# nutt
+# Nutt Travel Gujrat — Bus Ticket Booking App
 
-A new Flutter project.
+A complete guide to this Flutter project, written for explaining it as a final year university project. This document explains what the app does, how it is built, what every file is for, and how data moves through the system.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 1. What This Project Is
 
-A few resources to get you started if this is your first Flutter project:
+Nutt Travel Gujrat is a **bus ticket booking mobile application** built with **Flutter** (so it can run on Android, iOS, and other platforms from one codebase) and **Firebase** as the backend (no custom server was written — Firebase handles the database, login system, and file storage).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+The app has **two separate sides** built into the same codebase:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
->>>>>>> dfd818e (First commit)
+1. **User Side** — for passengers who want to search bus routes, pick a seat, pay, and manage their tickets.
+2. **Admin Side** — for the bus company staff who add buses, approve or reject bookings, and process refunds.
+
+Both sides are part of the same app. The very first screen the user sees is a **Welcome Screen** with two buttons: "Login" (goes to the user side) and "Admin" (goes to the admin side).
+
+The app is built around a real-world Pakistani travel context — fares are shown in **Rs (Pakistani Rupees)**, passengers are asked for their **CNIC** (the Pakistani national ID number), and the payment method used in the app is **JazzCash** (a mobile wallet/payment service popular in Pakistan).
+
+---
+
+## 2. The Big Picture — How a Booking Happens
+
+It helps to understand the entire journey of a single booking before looking at individual files, because almost every file in this project exists to support one step of this journey.
+
+1. **User signs up / logs in** using email and password (handled by Firebase Authentication).
+2. **User searches for a bus**: picks a "From" city, a "To" city, and a travel date on the Home screen.
+3. **User sees a list of matching buses** (Bus Schedule screen) with departure time and price.
+4. **User picks a seat** from a seat map. Seats can be: available (green), already booked by someone else (grey), or temporarily locked because someone else is mid-booking (also shown as unavailable).
+5. **User fills in passenger details and payment details** (name, phone, CNIC, gender, and JazzCash sender details) and submits.
+6. **A booking is created** in the database with status `pending`.
+7. **Admin reviews the booking** in the Admin app under the "Pending" tab, and either:
+   - **Approves** it → seat becomes permanently booked, user gets a notification.
+   - **Rejects** it → seat is released back to available, user gets a notification with the refund details.
+8. **User can request a refund** later (if it's more than 12 hours before departure) → booking goes into `refund_pending` → Admin approves or rejects the refund.
+9. **User can see all of this in real time** in the "My Tickets" tab, and gets notified through an in-app notification bell whenever the status changes.
+
+Almost every screen, model, and service in this project maps to one of these 9 steps.
+
+---
+
+## 3. Technology Stack
+
+| Technology | What it's used for in this app |
+|---|---|
+| **Flutter / Dart** | The framework used to build the entire mobile app UI and logic |
+| **Firebase Authentication** | Handles user signup/login with email + password |
+| **Cloud Firestore** | The main database — stores users, buses, and bookings as documents |
+| **Firebase Realtime Database** | Used specifically for things that change very fast and need instant sync — seat locking, live seat maps, and notifications |
+| **Firebase Storage** | Included as a dependency for storing images (e.g. profile photos / payment screenshots), though the current screens mostly keep this client-side |
+| **Provider** | A state management package — it lets screens "listen" to data (like bookings or buses) and automatically rebuild when that data changes, without manually passing data between screens |
+| **image_picker** | Lets the user pick an image from their gallery (used for profile photo) |
+| **intl** | Used for formatting dates nicely (e.g., "Mon", "25", "Aug") |
+
+### Why two databases (Firestore *and* Realtime Database)?
+
+This is one of the more interesting design decisions in the project, worth explaining to evaluators:
+
+- **Cloud Firestore** is used as the "source of truth" — the permanent record of bookings, buses, and users. It's good for structured data and complex queries (like "all bookings where status = pending").
+- **Firebase Realtime Database** is used for the **seat-locking system** and **notifications**, because it is extremely fast at syncing small pieces of data to many devices instantly. This matters a lot for seat selection: if two people try to tap the same seat at almost the same moment, the app needs to react in milliseconds, not after a slower query.
+
+---
+
+## 4. Project Folder Structure
+
+Only the meaningful folders are listed below. (The `android/`, `ios/`, `macos/`, `windows/`, `linux/`, and `web/` folders are auto-generated by Flutter for each platform and don't contain app logic — they can be skipped in a presentation.)
+
+```
+lib/
+├── main.dart                       → App entry point
+├── welcome_screen.dart             → First screen (choose User or Admin)
+├── firebase_options.dart           → Auto-generated Firebase config (per platform)
+│
+├── services/                       → Shared logic used by BOTH user and admin side
+│   ├── auth_service.dart           → Login / signup / profile update for users
+│   ├── bus_service.dart            → Reads bus list from Firestore
+│   ├── booking_service.dart        → Creates bookings, handles refunds
+│   ├── realtime_service.dart       → Seat locking logic (Realtime Database)
+│   └── notification_service.dart   → Lets admin push a notification to a user
+│
+├── widgets/                        → Small reusable UI pieces (used in early screens)
+│   ├── button.dart
+│   ├── textfield.dart
+│   └── colors.dart
+│
+├── user/                           → Everything the PASSENGER sees and uses
+│   ├── presentation/               → All user-facing screens
+│   ├── providers/                  → State management for user notifications
+│   ├── services/                   → User-specific notification service
+│   └── models/                     → Data models for user notifications
+│
+└── admin_side/                     → Everything the BUS COMPANY STAFF sees and uses
+    ├── admin_login.dart
+    ├── admin_side.dart              → Wraps the whole admin app in its own theme
+    ├── core/
+    │   ├── constants/app_constants.dart   → Colors, padding sizes, shared text
+    │   └── utils/json_utils.dart          → Helper for encoding/decoding JSON
+    ├── models/                      → Data shapes: Admin, Bus, Booking, Notification
+    ├── providers/                   → State management (Auth, Bus, Booking, Dashboard, Notification)
+    ├── screens/                     → Admin dashboard, buses, bookings, profile, notifications
+    └── widgets/                     → Cards and reusable admin UI pieces
+```
+
+A simple way to describe this structure to your evaluators: **the project is split into three layers** — `services` (talks to Firebase), `providers`/state (holds and manages data while the app runs), and `presentation`/`screens` (the UI the user taps on) — and it is also split **horizontally** into `user/` and `admin_side/` because they're two very different apps for two very different kinds of people.
+
+---
+
+## 5. File-by-File Explanation
+
+### 5.1 Entry Point
+
+**`lib/main.dart`**
+This is where the app starts. It does three things: initializes Firebase so the rest of the app can talk to the database, wraps the whole app in a `MultiProvider` (so every screen can access shared state like bookings or bus lists), and sets `WelcomeScreen` as the first thing the user sees. It also sets the app-wide theme (green color scheme, "Bus Management System" as the app title).
+
+**`lib/welcome_screen.dart`**
+The very first screen. Shows the app's logo image, a short tagline, and two buttons: **Admin** (goes to `AdminLogin`) and **Login** (goes to `UserLogin`). This is the fork in the road that splits the app into its two sides.
+
+**`lib/firebase_options.dart`**
+Auto-generated by the Firebase CLI tool (`flutterfire configure`). Contains API keys and project IDs for each platform (Android, iOS, web, etc.) so the app knows which Firebase project to connect to. This file is not meant to be edited by hand.
+
+---
+
+### 5.2 Shared Services (`lib/services/`)
+
+These are used by both the user and admin sides, so they live outside both folders.
+
+**`auth_service.dart`**
+Handles user authentication: `signUpUser()` creates a Firebase Auth account and also saves the user's name/email/role into a `users` collection document in Firestore. `loginUser()` signs the user in and checks that their Firestore role is `'user'` (if it's an admin account, it rejects the login and tells them to use the admin screen). Also has `updateUserProfile()` and `changePassword()`.
+
+**`bus_service.dart`**
+Very short and focused: `streamBuses()` returns a live (real-time) list of all buses from the `buses` Firestore collection, sorted newest-first. Because it returns a `Stream`, any screen using it automatically updates the moment a new bus is added by an admin, without needing to manually refresh.
+
+**`booking_service.dart`**
+The most important service in the app — this is where bookings, refunds, and seat-locking all come together. Key methods:
+- `createBooking()` — checks the Realtime Database to make sure the seat isn't already booked, then creates a new booking document in Firestore with status `'pending'`.
+- `processRefund()` — moves a booking into `'refund_pending'` status, creates an audit-trail document in a `refund_requests` collection, and notifies the admin.
+- `approveRefund()` / `rejectRefund()` — admin-only actions that finalize a refund decision.
+- `checkRefundEligibility()` — business rule: refunds are only allowed if the booking isn't already refunded/pending, and the trip is **more than 12 hours away**.
+- `streamUserBookings()` — live list of the currently logged-in user's bookings, used by the "My Tickets" screen.
+
+**`realtime_service.dart`**
+Manages **temporary seat locks** using Firebase Realtime Database transactions. When a user taps a seat, `lockSeat()` reserves it for that user for a set time (default 300 seconds / 5 minutes), using a database "transaction" so that if two people tap the same seat at the exact same moment, only one of them wins the lock — this prevents double-booking. `confirmBooking()` turns a temporary lock into a permanent booking, and `releaseSeat()` frees up a seat if the user backs out.
+
+**`notification_service.dart`** (in `lib/services/`)
+A small helper (`AdminNotificationService`) that lets the **admin side** push a notification into a specific user's notification list in the Realtime Database. Used whenever the admin approves, rejects, or refunds a booking.
+
+---
+
+### 5.3 User Side (`lib/user/`)
+
+This is everything the passenger interacts with.
+
+#### Presentation (Screens) — `lib/user/presentation/`
+
+**`login.dart`** — The "Login" screen for regular users. Has email/password fields with a show/hide password toggle, calls `AuthService.loginUser()`, and on success navigates to `HomeScreen`. Has a "Sign up" link for new users.
+
+**`signup.dart`** — The registration screen. Validates the email format with a regex, and enforces a **strong password policy** (minimum 8 characters, must include uppercase, lowercase, a digit, and a special character). Calls `AuthService.signUpUser()` to create the account.
+
+**`home_screen.dart`** — Contains two important things:
+1. `HomeScreen` — the main shell with a bottom navigation bar (**Home**, **Tickets**, **Profile**) using an `IndexedStack` so switching tabs doesn't lose each tab's state. Also handles the back-button behavior (pressing back on the Home tab asks "Are you sure you want to exit?").
+2. `HomeTab` — the actual search form: pick a "From" city, a "To" city (filtered to only show valid destinations from the selected city), swap the two with a button, pick a travel date, and tap "Find Schedule" to move to the next screen. Also shows a notification bell icon with a live unread-count badge.
+
+**`bus_schedule.dart`** — Shows a horizontal date-picker strip (7 days) and a live-updating list of buses matching the selected from/to/date. Tapping a bus card opens the seat selection screen for that specific bus.
+
+**`seats_selection.dart`** — Displays a grid of seats (using `GridView.builder`) and color-codes each seat: green = available, grey = booked or locked, orange = currently selected. It listens to `RealtimeService.streamSeatLocks()` so the seat map updates live if someone else books a seat while you're looking at the screen. Tapping an available seat moves straight to the Payment screen.
+
+**`payment_screen.dart`** — A form collecting passenger details (name, 11-digit phone number, 13-digit CNIC, gender) and payment details (JazzCash sender name and number). Includes input validation (e.g. regex-based formatters that auto-capitalize names and strip invalid characters). On submit, it calls `BookingService.createBooking()` and then returns to the Home screen.
+
+**`tickets_screen.dart`** — The "My Tickets" tab. Shows every booking the user has made, with a colored status badge (pending / approved / refund pending / refunded / rejected). Contains the business logic for **when a "Request Refund" button is allowed to appear** (only for pending/approved bookings, only if departure is more than 12 hours away). Tapping "View Details" opens a dialog with the full passenger, journey, and payment breakdown.
+
+**`profile_screen.dart`** — Shows the user's profile (name, email, profile picture via `image_picker`), and has options to edit profile, change password, view refund policy info, get help/support, and log out.
+
+**`notification_screen.dart`** — Lists all notifications sent to this user (e.g. "Your booking was approved") with read/unread status, pulled live from the Realtime Database.
+
+#### Other User-Side Folders
+
+**`lib/user/providers/notification_providers.dart`** — State management wrapper around the user's notifications so widgets can listen for changes.
+
+**`lib/user/services/notification_service.dart`** — A more detailed notification service than the admin one: lets you send, mark as read (single or all), delete (single or all), and stream the live unread count. This is what powers the badge counter on the Home screen's notification bell.
+
+**`lib/user/models/notification_models.dart`** — The data shape (fields) of a single notification object.
+
+---
+
+### 5.4 Admin Side (`lib/admin_side/`)
+
+This is the management dashboard used by the bus company.
+
+**`admin_login.dart`** — A simple email/password login screen for staff. Note: unlike the user login, this screen signs in directly with Firebase Auth without checking the Firestore role first — the role check actually happens inside `AuthProvider` right after login (see below).
+
+**`admin_side.dart`** — Wraps the entire admin section in its own `MaterialApp` with its own theme, and sets `HomeScreen` (the admin dashboard shell) as the home page.
+
+#### `core/` — Shared admin constants and helpers
+
+**`core/constants/app_constants.dart`** — Centralizes shared values: theme colors (primary green, dark green, light green), default padding/border-radius sizes, and string constants like collection names. Keeping these in one file means changing the app's color scheme only requires editing one place.
+
+**`core/utils/json_utils.dart`** — Small helper functions to safely convert between JSON strings and Dart `Map`/`List` objects, with built-in error handling so a malformed JSON string doesn't crash the app.
+
+#### `models/` — Data Shapes
+
+**`admin_model.dart`** — Represents a logged-in admin (name, email, password placeholder).
+
+**`bus_model.dart`** — Represents one bus: route (from/to), departure date & time, ticket price, driver name, number plate, total seats, and status (Active/Inactive/Maintenance). Includes `fromMap()`/`toMap()` converters so Firestore documents can be turned into usable Dart objects and back.
+
+**`booking_model.dart`** — The biggest model in the app. Represents a single ticket booking: passenger details (name, phone, CNIC, gender), journey details (bus, route, seat, date, time), payment details (amount, method, sender info), the **status** (pending/approved/rejected/refund_pending/refunded), and a full set of **refund and rejection fields** (refund amount, refund account name, rejection reason, timestamps). This model is shared between the user and admin sides since both need to read/write the same booking data.
+
+**`notification_model.dart`** — Represents a single notification (title, message, type, read status, timestamp).
+
+#### `providers/` — App State (using the Provider package)
+
+Each provider follows the same pattern: it listens to a Firestore/Realtime DB stream in its constructor, keeps the latest data in memory, and calls `notifyListeners()` whenever new data arrives so every screen using that provider rebuilds automatically.
+
+**`auth_provider.dart`** — Tracks whether an admin is logged in. Listens to Firebase's `authStateChanges()` and checks the user's Firestore `role` field. *(Worth noting honestly: there is a leftover "testing" comment in this file where the code currently allows login even for accounts without the `'admin'` role, with the proper role-check code commented out below it. This is a good real-world example to point out during a viva — security checks must be enabled before deployment.)*
+
+**`bus_provider.dart`** — Listens to the `buses` collection in real time and exposes methods to `addBus()`, `updateBusStatus()`, and `deleteBus()`.
+
+**`booking_provider.dart`** — Listens to the `bookings` collection in real time, and exposes filtered getters (`pendingBookings`, `approvedBookings`, `refundPendingBookings`, `rejectedBookings`, `refundedBookings`) so the Booking screen's tabs can each show the right list without separate queries. Also contains the core admin actions: `approveBooking()`, `rejectBooking()`, and `processRefund()` — each one updates Firestore, syncs the change to the Realtime Database, and pushes a notification to the affected user.
+
+**`dashboard_provider.dart`** — Listens to bookings, buses, and users collections simultaneously to calculate the dashboard's live statistics: total users, total earnings (sum of approved booking prices), total buses, total bookings, approved count, and pending count.
+
+**`notification_provider.dart`** — Tracks admin-facing notifications (e.g. "New Refund Request") and the unread count shown as a red badge on the dashboard's bell icon.
+
+#### `screens/` — Admin UI
+
+**`home_screen.dart`** — The admin dashboard shell with a bottom nav bar (Home, Buses, Bookings, Profile). The `DashboardTab` widget shows a grid of stat cards (Total Users, Total Earnings, Total Buses, Approved Bookings, Pending Requests, Total Bookings), each pulling live numbers from `DashboardProvider` and `BookingProvider`.
+
+**`buses/buses_screen.dart`** — Lists all buses added so far, with options to edit status or delete a bus, and a button to open `add_bus_screen.dart`.
+
+**`buses/add_bus_screen.dart`** — A form for creating a new bus: from/to cities, departure date & time (via a date picker + time picker combined), ticket price, driver name, number plate, and total seat count. Calls `BusProvider.addBus()` on submit.
+
+**`booking/booking_screen.dart`** — The heart of the admin workflow. A 5-tab screen (**Pending / Approved / Refund Pending / Refunded / Rejected**) listing bookings in each category. From the Pending tab, the admin can **Approve** (with a confirmation dialog) or **Reject** (with a dialog asking for refund amount, refund account, and rejection reason). From the Refund Pending tab, the admin can **process the refund** (dialog asking for the final refund amount, account, and an optional reason). Every action also fires a notification to the affected passenger.
+
+**`notification/notification_screen.dart`** — Shows the admin's own notification feed (e.g. new refund requests).
+
+**`profile/profile_screen.dart`** — The admin's own profile management screen (name, password change, logout).
+
+#### `widgets/` — Reusable Admin UI Pieces
+
+| File | Purpose |
+|---|---|
+| `dashboard_card.dart` | One stat tile on the dashboard grid (icon + title + value) |
+| `bus_card.dart` | One bus entry shown in the Buses list, color-coded by status |
+| `booking_card.dart` | One booking entry shown in the Bookings tabs, with Approve/Reject/Refund action buttons |
+| `notification_card.dart` | One notification entry, color-coded by notification type |
+| `custom_text_field.dart` | A styled, reusable text input used throughout the admin forms |
+| `loading_widget.dart` | A consistent loading spinner + message shown while data is being fetched |
+
+---
+
+### 5.5 Shared Top-Level Widgets (`lib/widgets/`)
+
+These three files are simple, reusable UI helpers used mainly by the earliest screens in the app (Welcome, Login):
+
+- **`button.dart`** — `AppButton`, a gradient-styled rounded button with an optional loading spinner.
+- **`textfield.dart`** — `GTextField`, a green-themed text field with built-in password show/hide support.
+- **`colors.dart`** — `AppColors`, a couple of shared color constants.
+
+---
+
+## 6. How the Data Is Organized in Firebase
+
+Even though there's no formal backend code, it helps to describe the database "shape" during your defense, since this is effectively the app's data model.
+
+### Cloud Firestore (structured, permanent data)
+
+- **`users`** collection — one document per signed-up account. Fields: `name`, `email`, `role` (`'user'` or `'admin'`), `createdAt`.
+- **`buses`** collection — one document per scheduled bus. Fields: `from`, `to`, `departureAt`, `ticketPrice`, `driverName`, `numberPlate`, `totalSeats`, `status`, `createdAt`.
+- **`bookings`** collection — one document per ticket. Fields include passenger info, journey info, payment info, `status`, and refund/rejection fields (see `booking_model.dart` above).
+- **`refund_requests`** collection — an audit trail of every refund request, kept separate from the booking itself so there's a clear history even after the booking's own status changes.
+
+### Firebase Realtime Database (fast-changing, live-sync data)
+
+- **`seat_data/{busId}/{date}/locks/{seatNumber}`** — temporary holds on a seat while someone is in the middle of booking it (expires automatically after a few minutes).
+- **`seat_data/{busId}/{date}/booked/{seatNumber}`** — permanently booked seats for that bus on that date.
+- **`booking_status/{bookingId}`** — a fast-access mirror of a booking's current status, so the admin panel and seat map can react instantly without a full Firestore read.
+- **`user_notifications/{userId}`** and **`notifications/{userId}`** — per-user notification feeds.
+- **`admin_notifications`** — notifications meant for admin staff (e.g. "New Refund Request").
+
+---
+
+## 7. Key Concepts Worth Highlighting in a Presentation
+
+- **Role-based access**: a single `users` collection stores both passengers and admins, distinguished only by a `role` field. This is a common, simple pattern for small apps that don't need a separate admin database.
+- **Real-time UI with `StreamBuilder`**: almost every list in the app (buses, bookings, notifications, seat maps) is built using Flutter's `StreamBuilder` widget connected to a Firestore or Realtime Database stream — meaning the UI updates itself the instant the underlying data changes, with no manual refresh button needed.
+- **Provider pattern for state management**: rather than passing data manually from screen to screen, the app registers shared "Provider" objects once at the top of the app (in `main.dart`) and any screen can read or listen to them from anywhere in the widget tree.
+- **Preventing double-booking with database transactions**: the seat-locking system in `realtime_service.dart` is a practical example of a **race condition** problem (two users trying to claim the same resource at the same time) solved using Firebase's `runTransaction()`, which guarantees only one of two simultaneous attempts can succeed.
+- **Business rules enforced in code, not just UI**: refund eligibility (12-hour cutoff), CNIC length (13 digits), phone number length (11 digits), and password strength are all validated in code, not just suggested in the UI — a good talking point about input validation and data integrity.
+
+---
+
+## 8. Known Limitations (Good to Mention Proactively)
+
+Being upfront about these shows strong understanding of the project, and they're genuinely useful talking points for a viva/defense:
+
+1. **The root `README.md` in the original project has an unresolved Git merge conflict** (leftover `<<<<<<< HEAD` / `=======` / `>>>>>>>` markers from a merge). This file replaces it.
+2. **The admin role check is currently bypassed for testing** in `auth_provider.dart` — any logged-in user can reach the admin dashboard, with the real role-check code commented out just below. In a production version, this should be re-enabled.
+3. **Only one payment method (JazzCash) is wired up** in the dropdown, even though the field is designed to support more.
+4. **Payment screenshots are picked via `image_picker` but not actually uploaded to Firebase Storage** in the current payment flow — the picker result is read but not persisted, even though `firebase_storage` is included as a dependency.
+5. **The Firestore security rules are not part of this codebase** (not included in the zip), so they cannot be reviewed here — only the client-side logic could be assessed.
+
+---
+
+## 9. How to Run the Project
+
+```bash
+# 1. Install dependencies
+flutter pub get
+
+# 2. Make sure a Firebase project is connected
+#    (firebase_options.dart already points to a project called "nutttravel")
+
+# 3. Run on a connected device or emulator
+flutter run
+```
+
+You'll need the Flutter SDK installed (this project specifies `sdk: ^3.11.1` in `pubspec.yaml`), and a working internet connection since almost every screen depends on Firebase.
