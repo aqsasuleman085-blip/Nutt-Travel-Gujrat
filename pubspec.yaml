@@ -43,6 +43,7 @@ dependencies:
   cloud_firestore: ^4.17.5
   firebase_storage: ^11.7.7
   firebase_database: ^10.5.7
+  url_launcher: ^6.3.1   # ✅ added for Help & Support / Contact Us tap-to-call, email, WhatsApp links
 
 dev_dependencies:
   flutter_test:

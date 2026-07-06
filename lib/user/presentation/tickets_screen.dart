@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
 import '../../services/booking_service.dart';
+import 'refund_request_form.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -69,39 +70,39 @@ class _TicketsScreenState extends State<TicketsScreen> {
     }
   }
 
-  /// Confirmation dialog
-  Future<void> _confirmRefundDialog(BookingModel booking) async {
-    final result = await showDialog<bool>(
+  /// Opens the full Refund Request Form (bottom sheet) instead of the old
+  /// one-tap confirmation dialog. The form collects route/passenger details
+  /// (read-only, auto-filled from the booking), account details (auto-filled
+  /// but editable), a refund reason dropdown, and a terms & conditions
+  /// checkbox. On submit it calls _processRefund with all the extra details.
+  Future<void> _openRefundRequestForm(BookingModel booking) async {
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Confirm Refund"),
-        content: Text(
-          "Are you sure you want to refund ticket ${booking.seatNumber}?\n\n"
-          "Amount: Rs ${booking.price.toStringAsFixed(0)}\n"
-          "Payment Method: ${booking.paymentMethod}\n\n"
-          "⏳ Your refund request will be pending admin approval.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Confirm Refund"),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => RefundRequestForm(
+        booking: booking,
+        themeColor: themeColor,
+        onSubmit: (accountName, accountNumber, reason) =>
+            _processRefund(
+              booking,
+              refundAccountName: accountName,
+              refundAccountNumber: accountNumber,
+              refundReason: reason,
+            ),
       ),
     );
-
-    if (result == true) {
-      await _processRefund(booking);
-    }
   }
 
-  /// Process refund - Always sets status to refund_pending
-  Future<void> _processRefund(BookingModel booking) async {
+  /// Process refund - Always sets status to refund_pending.
+  /// Now also carries passenger name + account details + refund reason,
+  /// all collected from the Refund Request Form.
+  Future<void> _processRefund(
+    BookingModel booking, {
+    required String refundAccountName,
+    required String refundAccountNumber,
+    required String refundReason,
+  }) async {
     // Set processing state for this booking
     setState(() {
       _processingBookingId = booking.id;
@@ -116,6 +117,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
         seatNumber: booking.seatNumber,
         route: '${booking.busFrom} → ${booking.busTo}',
         paymentMethod: booking.paymentMethod,
+        passengerName: booking.userName,
+        refundAccountName: refundAccountName,
+        refundAccountNumber: refundAccountNumber,
+        refundReason: refundReason,
       );
 
       // Show success message
@@ -142,6 +147,79 @@ class _TicketsScreenState extends State<TicketsScreen> {
       }
     } finally {
       // Clear processing state
+      if (mounted) {
+        setState(() {
+          _processingBookingId = null;
+        });
+      }
+    }
+  }
+
+  /// Shows a confirmation dialog before soft-deleting a ticket from this
+  /// user's "My Tickets" list. The underlying booking record is kept in
+  /// Firestore (for admin/history), only hidden from this user's view.
+  Future<void> _confirmDeleteTicket(BookingModel booking) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Delete Ticket'),
+        content: Text(
+          'Are you sure you want to remove ticket ${booking.seatNumber} '
+          '(${booking.busFrom} → ${booking.busTo}) from your list?\n\n'
+          'This will only remove it from your view. Your booking record '
+          'is kept for our records.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _deleteTicket(booking);
+    }
+  }
+
+  Future<void> _deleteTicket(BookingModel booking) async {
+    setState(() {
+      _processingBookingId = booking.id;
+    });
+
+    try {
+      await _bookingService.hideBookingForUser(booking.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ticket removed from your list.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove ticket: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _processingBookingId = null;
@@ -429,12 +507,35 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       color: themeColor,
                     ),
                   ),
-                  if (isProcessing)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isProcessing)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      // Delete icon: soft-deletes the ticket from this
+                      // user's list only (booking record is kept in
+                      // Firestore for admin/history purposes).
+                      InkWell(
+                        onTap: () => _confirmDeleteTicket(booking),
+                        borderRadius: BorderRadius.circular(20),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 6),
@@ -609,7 +710,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             vertical: 8,
                           ),
                         ),
-                        onPressed: () => _confirmRefundDialog(booking),
+                        onPressed: () => _openRefundRequestForm(booking),
                         child: const Text("Request Refund"),
                       ),
                     if (showRefundButton) const SizedBox(width: 8),

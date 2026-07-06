@@ -36,6 +36,11 @@ class BookingModel {
   final String rejectionReason;
   final DateTime? rejectedAt;
 
+  // SOFT-DELETE: list of userIds who have hidden this booking from their
+  // own "My Tickets" list. The booking document itself is never removed
+  // from Firestore, so admin records are always preserved.
+  final List<String> hiddenFor;
+
   BookingModel({
     required this.id,
     required this.userId,
@@ -67,6 +72,7 @@ class BookingModel {
     this.refundApprovedAt,
     this.rejectionReason = '',
     this.rejectedAt,
+    this.hiddenFor = const [],
     DateTime? bookingDate,
     DateTime? createdAt,
   }) : bookingDate = bookingDate ?? DateTime.now(),
@@ -108,6 +114,8 @@ class BookingModel {
       // Rejection fields
       'rejectionReason': rejectionReason,
       'rejectedAt': rejectedAt?.millisecondsSinceEpoch,
+      // Soft-delete tracking
+      'hiddenFor': hiddenFor,
     };
   }
 
@@ -117,8 +125,8 @@ class BookingModel {
       userId: map['userId'] ?? '',
       userName: map['userName'] ?? map['name'] ?? '',
       userEmail: map['userEmail'] ?? '',
-      phone: map['phone'] ?? '',
-      cnic: map['cnic'] ?? '',
+      phone: map['phone'] ?? map['userPhone'] ?? '',
+      cnic: map['cnic'] ?? map['userCnic'] ?? '',
       busId: map['busId'] ?? '',
       busFrom: map['busFrom'] ?? map['from'] ?? '',
       busTo: map['busTo'] ?? map['to'] ?? '',
@@ -133,7 +141,7 @@ class BookingModel {
       senderName: map['senderName'] ?? '',
       senderNumber: map['senderNumber'] ?? '',
       paymentScreenshotUrl: map['paymentScreenshotUrl'] ?? '',
-      gender: map['gender'] ?? '',
+      gender: map['gender'] ?? map['userGender'] ?? '',
       travelDate: map['travelDate'] ?? map['bookingDate'] ?? '',
       // Refund fields
       refundAmount: map['refundAmount']?.toString() ?? '',
@@ -147,6 +155,9 @@ class BookingModel {
       rejectedAt: map['rejectedAt'] != null
           ? _toDateTime(map['rejectedAt'])
           : null,
+      hiddenFor: map['hiddenFor'] != null
+          ? List<String>.from(map['hiddenFor'])
+          : const [],
       bookingDate: _toDateTime(map['createdAt'] ?? map['bookingDate']),
       createdAt: _toDateTime(map['createdAt'], fallbackToNow: true),
     );

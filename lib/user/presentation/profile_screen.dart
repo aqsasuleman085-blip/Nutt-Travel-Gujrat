@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nutt/welcome_screen.dart';
 
 import '../../services/auth_service.dart';
+import 'help_support_screen.dart';
+import 'contact_us_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -313,14 +315,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToHelpSupport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Help & Support will be available soon")),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
     );
   }
 
   void _navigateToContactUs() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Contact Us will be available soon")),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ContactUsScreen()),
     );
   }
 

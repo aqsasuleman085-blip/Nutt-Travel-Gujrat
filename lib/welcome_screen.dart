@@ -88,7 +88,7 @@ class WelcomeScreen extends StatelessWidget {
                         );
                       },
                       child: const Text(
-                        "Login",
+                        "User",
                         style: TextStyle(color: Colors.white),
                       ),
                     ),

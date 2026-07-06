@@ -9,6 +9,11 @@ class BookingService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// ✅ UNIFIED REFUND METHOD - Always sets status to 'refund_pending' first
+  ///
+  /// [passengerName], [refundAccountName], [refundAccountNumber], and [refundReason]
+  /// are collected from the new Refund Request Form in tickets_screen.dart and are
+  /// stored both in Firestore (refund_requests + bookings) and Realtime Database
+  /// so the admin panel can display full refund details.
   Future<void> processRefund({
     required String bookingId,
     required String userId,
@@ -16,6 +21,10 @@ class BookingService {
     required String seatNumber,
     required String route,
     required String paymentMethod,
+    String passengerName = '',
+    String refundAccountName = '',
+    String refundAccountNumber = '',
+    String refundReason = '',
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not logged in');
@@ -35,10 +44,14 @@ class BookingService {
         'bookingId': bookingId,
         'userId': userId,
         'userEmail': user.email ?? '',
+        'passengerName': passengerName,
         'amount': amount,
         'seatNumber': seatNumber,
         'route': route,
         'paymentMethod': paymentMethod,
+        'refundAccountName': refundAccountName,
+        'refundAccountNumber': refundAccountNumber,
+        'refundReason': refundReason,
         'status': 'refund_pending', // Always pending first
         'isCashPayment': isCashPayment,
         'processedAt': null, // Not processed yet
@@ -53,6 +66,9 @@ class BookingService {
         'refundStatus': 'refund_pending',
         'refundRequestedAt': now,
         'refundAmount': amount,
+        'refundAccountName': refundAccountName,
+        'refundAccountNumber': refundAccountNumber,
+        'refundReason': refundReason,
         'paymentMethod': paymentMethod,
         'updatedAt': now,
       });
@@ -73,10 +89,14 @@ class BookingService {
         'bookingId': bookingId,
         'userId': userId,
         'userEmail': user.email ?? '',
+        'passengerName': passengerName,
         'amount': amount,
         'seatNumber': seatNumber,
         'route': route,
         'paymentMethod': paymentMethod,
+        'refundAccountName': refundAccountName,
+        'refundAccountNumber': refundAccountNumber,
+        'refundReason': refundReason,
         'status': 'refund_pending',
         'isCashPayment': isCashPayment,
         'processedAt': null,
@@ -87,7 +107,8 @@ class BookingService {
       // 5. Create admin notification for all refund requests
       await _realtimeDb.ref('admin_notifications').push().set({
         'title': 'New Refund Request',
-        'message': 'Refund requested for seat $seatNumber ($route) - Amount: Rs ${amount.toStringAsFixed(0)}',
+        'message': 'Refund requested by $passengerName for seat $seatNumber ($route) - '
+            'Amount: Rs ${amount.toStringAsFixed(0)} - Reason: $refundReason',
         'type': 'refund_pending',
         'refundId': refundRef.id,
         'bookingId': bookingId,
@@ -242,10 +263,35 @@ class BookingService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return BookingModel.fromMap({'id': doc.id, ...doc.data()});
-          }).toList();
+          return snapshot.docs
+              .map((doc) {
+                return BookingModel.fromMap({'id': doc.id, ...doc.data()});
+              })
+              // Soft-delete: hide any booking this user has removed from
+              // their own ticket list. The document itself still exists
+              // in Firestore for admin/audit purposes.
+              .where((booking) => !booking.hiddenFor.contains(user.uid))
+              .toList();
         });
+  }
+
+  /// ✅ SOFT DELETE a ticket from the current user's "My Tickets" list.
+  ///
+  /// This does NOT delete the booking document from Firestore - it only
+  /// adds the current user's ID to the booking's `hiddenFor` array, so the
+  /// admin side and any audit/history queries keep the full record intact.
+  Future<void> hideBookingForUser(String bookingId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    try {
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'hiddenFor': FieldValue.arrayUnion([user.uid]),
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      });
+    } catch (e) {
+      throw Exception('Failed to remove ticket: $e');
+    }
   }
 
   /// ✅ GET SINGLE BOOKING by ID
