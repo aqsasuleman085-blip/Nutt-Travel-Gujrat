@@ -12,6 +12,11 @@ class BusModel {
   final String status;
   final DateTime createdAt;
 
+  // RATING AGGREGATES: updated whenever a user rates a completed trip on
+  // this bus. averageRating is 0 when ratingCount is 0.
+  final double averageRating;
+  final int ratingCount;
+
   BusModel({
     required this.id,
     required this.from,
@@ -23,6 +28,8 @@ class BusModel {
     required this.totalSeats,
     this.status = 'Active',
     DateTime? createdAt,
+    this.averageRating = 0.0,
+    this.ratingCount = 0,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -37,6 +44,8 @@ class BusModel {
       'totalSeats': totalSeats,
       'status': status,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'averageRating': averageRating,
+      'ratingCount': ratingCount,
     };
   }
 
@@ -56,6 +65,10 @@ class BusModel {
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         map['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
       ),
+      averageRating: (map['averageRating'] ?? 0.0).toDouble(),
+      ratingCount: (map['ratingCount'] is num)
+          ? (map['ratingCount'] as num).toInt()
+          : 0,
     );
   }
 

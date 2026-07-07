@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nutt/admin_side/providers/theme_provider.dart';
 import 'package:nutt/welcome_screen.dart';
+import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
 import 'help_support_screen.dart';
@@ -478,6 +480,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.lock,
                     title: "Change Password",
                     onTap: _navigateToChangePassword,
+                  ),
+
+                  const Divider(height: 1, color: Colors.grey),
+
+                  // 🔹 DARK MODE TOGGLE
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return SwitchListTile(
+                        secondary: Icon(
+                          themeProvider.isDarkMode
+                              ? Icons.dark_mode
+                              : Icons.dark_mode_outlined,
+                          color: themeColor,
+                        ),
+                        title: const Text(
+                          "Dark Mode",
+                          style: TextStyle(fontSize: 15),
+                        ),
+                        value: themeProvider.isDarkMode,
+                        activeColor: themeColor,
+                        onChanged: (value) {
+                          themeProvider.toggleTheme(value);
+                        },
+                      );
+                    },
                   ),
 
                   const Divider(height: 1, color: Colors.grey),

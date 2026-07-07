@@ -41,6 +41,11 @@ class BookingModel {
   // from Firestore, so admin records are always preserved.
   final List<String> hiddenFor;
 
+  // RATING: set once the user rates their completed/approved trip.
+  // userRating is 1-5 stars; 0 means not yet rated.
+  final int userRating;
+  final String userRatingComment;
+
   BookingModel({
     required this.id,
     required this.userId,
@@ -73,6 +78,8 @@ class BookingModel {
     this.rejectionReason = '',
     this.rejectedAt,
     this.hiddenFor = const [],
+    this.userRating = 0,
+    this.userRatingComment = '',
     DateTime? bookingDate,
     DateTime? createdAt,
   }) : bookingDate = bookingDate ?? DateTime.now(),
@@ -116,6 +123,9 @@ class BookingModel {
       'rejectedAt': rejectedAt?.millisecondsSinceEpoch,
       // Soft-delete tracking
       'hiddenFor': hiddenFor,
+      // Rating
+      'userRating': userRating,
+      'userRatingComment': userRatingComment,
     };
   }
 
@@ -158,6 +168,10 @@ class BookingModel {
       hiddenFor: map['hiddenFor'] != null
           ? List<String>.from(map['hiddenFor'])
           : const [],
+      userRating: (map['userRating'] is num)
+          ? (map['userRating'] as num).toInt()
+          : 0,
+      userRatingComment: map['userRatingComment'] ?? '',
       bookingDate: _toDateTime(map['createdAt'] ?? map['bookingDate']),
       createdAt: _toDateTime(map['createdAt'], fallbackToNow: true),
     );

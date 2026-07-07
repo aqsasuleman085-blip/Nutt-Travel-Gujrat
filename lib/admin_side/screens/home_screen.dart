@@ -7,11 +7,15 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_constants.dart';
 import '../providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
-import '../widgets/dashboard_card.dart';
+import '../widgets/dashboard_chart_card.dart';
 import '../widgets/loading_widget.dart';
 import 'booking/booking_screen.dart';
 import 'buses/buses_screen.dart';
 import 'profile/profile_screen.dart';
+import 'dashboard_details/users_detail_screen.dart';
+import 'dashboard_details/earnings_detail_screen.dart';
+import 'dashboard_details/buses_detail_screen.dart';
+import 'dashboard_details/bookings_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -168,43 +172,137 @@ class _DashboardTabState extends State<DashboardTab> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
+                        childAspectRatio: 0.95,
                         children: [
-                          DashboardCard(
+                          DashboardChartCard(
                             title: 'Total Users',
                             value: dashboardProvider.totalUsers.toString(),
                             icon: Icons.people,
                             iconColor: Colors.blue,
+                            chartType: MiniChartType.bar,
+                            chartValues: dashboardProvider.last7Days
+                                .map((d) => d.usersCreated.toDouble())
+                                .toList(),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const UsersDetailScreen(),
+                              ),
+                            ),
                           ),
-                          DashboardCard(
+                          DashboardChartCard(
                             title: 'Total Earnings',
                             value:
                                 'Rs. ${dashboardProvider.totalEarnings.toStringAsFixed(0)}',
                             icon: Icons.attach_money,
                             iconColor: Colors.green,
+                            chartType: MiniChartType.line,
+                            chartValues: dashboardProvider.last7Days
+                                .map((d) => d.earnings)
+                                .toList(),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const EarningsDetailScreen(),
+                              ),
+                            ),
                           ),
-                          DashboardCard(
+                          DashboardChartCard(
                             title: 'Total Buses',
                             value: dashboardProvider.totalBuses.toString(),
                             icon: Icons.directions_bus,
                             iconColor: Colors.orange,
+                            chartType: MiniChartType.donut,
+                            chartValues: [
+                              dashboardProvider.activeBusesCount.toDouble(),
+                              dashboardProvider.inactiveBusesCount.toDouble(),
+                            ],
+                            donutColors: const [
+                              Colors.orange,
+                              Colors.grey,
+                            ],
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BusesDetailScreen(),
+                              ),
+                            ),
                           ),
-                          DashboardCard(
+                          DashboardChartCard(
                             title: 'Approved Bookings',
-                            value: dashboardProvider.approvedBookingsCount.toString(),
+                            value: dashboardProvider.approvedBookingsCount
+                                .toString(),
                             icon: Icons.book_online,
                             iconColor: Colors.purple,
+                            chartType: MiniChartType.bar,
+                            chartValues: dashboardProvider.last7Days
+                                .map((d) => d.approvedCreated.toDouble())
+                                .toList(),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BookingsDetailScreen(
+                                  title: 'Approved Bookings',
+                                  statusFilter: 'approved',
+                                ),
+                              ),
+                            ),
                           ),
-                          DashboardCard(
+                          DashboardChartCard(
                             title: 'Pending Requests',
-                            value: bookingProvider.pendingBookings.length.toString(),
+                            value: bookingProvider.pendingBookings.length
+                                .toString(),
                             icon: Icons.pending_actions,
                             iconColor: Colors.orange,
+                            chartType: MiniChartType.bar,
+                            chartValues: dashboardProvider.last7Days
+                             .map((d) {
+                             return ((d.bookingsCreated - d.approvedCreated)
+                            .clamp(0, 999999))
+                            .toDouble();
+                            })
+                            .toList(),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BookingsDetailScreen(
+                                  title: 'Pending Requests',
+                                  statusFilter: 'pending',
+                                ),
+                              ),
+                            ),
                           ),
-                          DashboardCard(
+                          DashboardChartCard(
                             title: 'Total Bookings',
                             value: dashboardProvider.totalBookings.toString(),
                             icon: Icons.receipt_long,
                             iconColor: Colors.teal,
+                            chartType: MiniChartType.donut,
+                            chartValues: [
+                              dashboardProvider.approvedBookingsCount
+                                  .toDouble(),
+                              dashboardProvider.pendingBookingsCount
+                                  .toDouble(),
+                              dashboardProvider.rejectedBookingsCount
+                                  .toDouble(),
+                              dashboardProvider.refundBookingsCount
+                                  .toDouble(),
+                            ],
+                            donutColors: const [
+                              Colors.green,
+                              Colors.orange,
+                              Colors.red,
+                              Colors.blueGrey,
+                            ],
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BookingsDetailScreen(
+                                  title: 'Total Bookings',
+                                  statusFilter: null,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),

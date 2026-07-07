@@ -420,6 +420,76 @@ class BookingService {
     return docRef.id;
   }
 
+  /// ✅ SUBMIT A TRIP RATING for an approved booking.
+  ///
+  /// Stores the 1-5 star rating (and optional comment) on the booking
+  /// document, and atomically updates the related bus's aggregate
+  /// `averageRating` / `ratingCount` using a Firestore transaction so
+  /// concurrent ratings from different users never overwrite each other.
+  Future<void> submitRating({
+    required String bookingId,
+    required String busId,
+    required int rating,
+    String comment = '',
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+    if (rating < 1 || rating > 5) {
+      throw Exception('Rating must be between 1 and 5');
+    }
+
+    final bookingRef = _firestore.collection('bookings').doc(bookingId);
+    final busRef = _firestore.collection('buses').doc(busId);
+
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final bookingSnap = await transaction.get(bookingRef);
+        if (!bookingSnap.exists) {
+          throw Exception('Booking not found');
+        }
+        // Prevent double-counting if the user submits a rating twice.
+        final alreadyRated =
+            (bookingSnap.data()?['userRating'] as num?)?.toInt() ?? 0;
+
+        final busSnap = await transaction.get(busRef);
+        double currentAvg = 0.0;
+        int currentCount = 0;
+        if (busSnap.exists) {
+          currentAvg = (busSnap.data()?['averageRating'] ?? 0.0).toDouble();
+          currentCount = (busSnap.data()?['ratingCount'] as num?)?.toInt() ?? 0;
+        }
+
+        double newAvg;
+        int newCount;
+        if (alreadyRated > 0) {
+          // Replace the previous rating from this booking in the average.
+          final totalScore = (currentAvg * currentCount) - alreadyRated + rating;
+          newCount = currentCount == 0 ? 1 : currentCount;
+          newAvg = totalScore / newCount;
+        } else {
+          newCount = currentCount + 1;
+          final totalScore = (currentAvg * currentCount) + rating;
+          newAvg = totalScore / newCount;
+        }
+
+        transaction.update(bookingRef, {
+          'userRating': rating,
+          'userRatingComment': comment,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        });
+
+        if (busSnap.exists) {
+          transaction.update(busRef, {
+            'averageRating': newAvg,
+            'ratingCount': newCount,
+          });
+        }
+      });
+    } catch (e) {
+      throw Exception('Failed to submit rating: $e');
+    }
+  }
+
   /// ✅ HELPER: Format date key for Realtime DB
   String _dateKey(String date) {
     final parsed = DateTime.tryParse(date);

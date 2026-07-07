@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
 import '../../services/booking_service.dart';
 import 'refund_request_form.dart';
+import 'trip_rating_widget.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -480,32 +481,60 @@ class _TicketsScreenState extends State<TicketsScreen> {
         ? booking.travelDate
         : _formatDate(booking.bookingDate).split(' ')[0];
 
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: themeColor.withOpacity(0.3)),
-      ),
-      elevation: 3,
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: InkWell(
         onTap: () => _showDetailsDialog(context, booking),
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Boarding-pass style header strip
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              decoration: BoxDecoration(
+                color: themeColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Ticket ${booking.id.substring(0, 6)}...',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: themeColor,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'NUTT TRAVEL',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ticket ${booking.id.substring(0, 6).toUpperCase()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -514,9 +543,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
                         const Padding(
                           padding: EdgeInsets.only(right: 8),
                           child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       // Delete icon: soft-deletes the ticket from this
@@ -529,7 +563,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           padding: EdgeInsets.all(4),
                           child: Icon(
                             Icons.delete_outline,
-                            color: Colors.red,
+                            color: Colors.white,
                             size: 22,
                           ),
                         ),
@@ -538,7 +572,56 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+            ),
+
+            // Dashed tear-line, boarding-pass style, with cut-out notches
+            SizedBox(
+              height: 16,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    left: -10,
+                    top: -2,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F5F5),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: -10,
+                    top: -2,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F5F5),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    top: 7,
+                    child: CustomPaint(
+                      size: const Size(double.infinity, 1),
+                      painter: _DashedLinePainter(color: Colors.grey.shade300),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               Text(
                 '${booking.busFrom} → ${booking.busTo}',
                 style: const TextStyle(fontSize: 14),
@@ -730,6 +813,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     ),
                   ],
                 ),
+
+                // Rate your trip - only shown for approved bookings.
+                if (booking.status == 'approved')
+                  TripRatingWidget(booking: booking, themeColor: themeColor),
               ] else ...[
                 // Fallback: Show only view button for any other status
                 Row(
@@ -752,8 +839,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ],
                 ),
               ],
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -845,5 +934,38 @@ class _TicketsScreenState extends State<TicketsScreen> {
       ),
       body: getCurrentScreen(),
     );
+  }
+}
+
+/// Paints a horizontal dashed line, used for the boarding-pass style
+/// tear-line between the colored header strip and the ticket body.
+class _DashedLinePainter extends CustomPainter {
+  final Color color;
+
+  _DashedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5;
+
+    const dashWidth = 6.0;
+    const dashSpace = 4.0;
+    double startX = 0;
+
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, 0),
+        Offset(startX + dashWidth, 0),
+        paint,
+      );
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }

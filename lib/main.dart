@@ -6,8 +6,10 @@ import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/providers/bus_provider.dart';
 import 'package:nutt/admin_side/providers/dashboard_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
+import 'package:nutt/admin_side/providers/theme_provider.dart';
 import 'package:nutt/firebase_options.dart';
 import 'package:nutt/welcome_screen.dart';
+import 'package:nutt/splash_screen.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -28,22 +30,30 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Bus Management System',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.green,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          fontFamily: 'Roboto',
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppConstants.primaryColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
-        ),
-        home: const WelcomeScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'Bus Management System',
+            debugShowCheckedModeBanner: false,
+            themeMode: themeProvider.themeMode,
+            theme: ThemeData(
+              primarySwatch: Colors.green,
+              visualDensity: VisualDensity.adaptivePlatformDensity,
+              fontFamily: 'Roboto',
+              appBarTheme: const AppBarTheme(
+                backgroundColor: AppConstants.primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+            ),
+            darkTheme: ThemeProvider.darkTheme,
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }
 }
+
