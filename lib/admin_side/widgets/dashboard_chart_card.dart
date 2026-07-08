@@ -195,19 +195,23 @@ class DashboardChartCard extends StatelessWidget {
       );
     }
 
+    // fl_chart does not allow zero-value sections - build the section list
+    // only from entries with a value greater than 0.
+    final sections = <PieChartSectionData>[];
+    for (var i = 0; i < chartValues.length; i++) {
+      if (chartValues[i] <= 0) continue;
+      sections.add(
+        PieChartSectionData(
+          value: chartValues[i],
+          color: i < colors.length ? colors[i] : Colors.grey,
+          showTitle: false,
+          radius: 10,
+        ),
+      );
+    }
+
     return PieChart(
-      PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 8,
-        sections: List.generate(chartValues.length, (i) {
-          return PieChartSectionData(
-            value: chartValues[i],
-            color: i < colors.length ? colors[i] : Colors.grey,
-            showTitle: false,
-            radius: 10,
-          );
-        }),
-      ),
+      PieChartData(sectionsSpace: 2, centerSpaceRadius: 8, sections: sections),
     );
   }
 }

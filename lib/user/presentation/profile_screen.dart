@@ -330,15 +330,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 REFUND SCREEN NAVIGATION
-  void _navigateToRefund() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const RefundScreen(),
-      ),
-    );
-  }
+  // // 🔹 REFUND SCREEN NAVIGATION
+  // void _navigateToRefund() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => const RefundScreen(),
+  //     ),
+  //   );
+  // }
 
   void _navigateToLogout() {
     showDialog(
@@ -526,11 +526,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(height: 1, color: Colors.grey),
 
                   // 🔹 REFUND OPTION ADDED
-                  _buildMenuItem(
-                    icon: Icons.receipt_long,
-                    title: "Refund",
-                    onTap: _navigateToRefund,
-                  ),
+                  // _buildMenuItem(
+                  //   icon: Icons.receipt_long,
+                  //   title: "Refund",
+                  //   onTap: _navigateToRefund,
+                  // ),
 
                   const Divider(height: 1, color: Colors.grey),
 

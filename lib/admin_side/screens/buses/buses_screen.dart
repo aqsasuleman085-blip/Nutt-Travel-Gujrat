@@ -6,6 +6,7 @@ import '../../providers/bus_provider.dart';
 import '../../widgets/bus_card.dart';
 import '../../widgets/loading_widget.dart';
 import 'add_bus_screen.dart';
+import 'edit_bus_screen.dart';
 
 class BusesScreen extends StatelessWidget {
   const BusesScreen({Key? key}) : super(key: key);
@@ -84,9 +85,13 @@ class BusesScreen extends StatelessWidget {
                       // Navigate to bus details
                       _showBusDetails(context, bus);
                     },
-                    // onEdit: () {
-                    //   _editBus(context, bus);
-                    // },
+                    onEdit: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => EditBusScreen(bus: bus),
+                        ),
+                      );
+                    },
                     onDelete: () {
                       _confirmDeleteBus(context, bus);
                     },
@@ -159,15 +164,6 @@ class BusesScreen extends StatelessWidget {
           ),
           Expanded(child: Text(value)),
         ],
-      ),
-    );
-  }
-
-  void _editBus(BuildContext context, bus) {
-    // For simplicity, we'll show a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit functionality would be implemented here'),
       ),
     );
   }

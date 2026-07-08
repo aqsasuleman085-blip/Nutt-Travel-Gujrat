@@ -109,7 +109,7 @@ class BookingService {
         'title': 'New Refund Request',
         'message': 'Refund requested by $passengerName for seat $seatNumber ($route) - '
             'Amount: Rs ${amount.toStringAsFixed(0)} - Reason: $refundReason',
-        'type': 'refund_pending',
+        'type': 'booking',
         'refundId': refundRef.id,
         'bookingId': bookingId,
         'isRead': false,
@@ -416,6 +416,26 @@ class BookingService {
       'refundStatus': 'none',
       'updatedAt': now,
     });
+
+    // ✅ Notify admin of the new booking request, so it shows up on the
+    // admin side's notification list (same 'admin_notifications' path the
+    // refund flow already uses).
+    try {
+      await _realtimeDb.ref('admin_notifications').push().set({
+        'title': 'New Booking Request',
+        'message': 'New booking from $name for seat $seat ($from → $to) - '
+            'Amount: Rs ${totalAmount.toStringAsFixed(0)}',
+        'type': 'booking',
+        'bookingId': docRef.id,
+        'isRead': false,
+        'createdAt': now,
+      });
+    } catch (e) {
+      // A notification failure should never block the booking itself from
+      // succeeding - the booking is already saved at this point.
+      // ignore: avoid_print
+      print('Failed to send admin notification for booking: $e');
+    }
 
     return docRef.id;
   }

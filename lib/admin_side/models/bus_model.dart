@@ -9,13 +9,21 @@ class BusModel {
   final String driverName;
   final String numberPlate;
   final int totalSeats;
-  final String status;
   final DateTime createdAt;
 
   // RATING AGGREGATES: updated whenever a user rates a completed trip on
   // this bus. averageRating is 0 when ratingCount is 0.
   final double averageRating;
   final int ratingCount;
+
+  /// STATUS IS NOW FULLY AUTO-CALCULATED from [departureAt] - there is no
+  /// manual Active/Inactive/Maintenance field anymore. A bus is 'Active'
+  /// as long as its departure time is still in the future, and becomes
+  /// 'Expired' automatically the moment that time passes - no admin action
+  /// needed, and no way for it to get "stuck" on the wrong value.
+  String get status => isExpired ? 'Expired' : 'Active';
+
+  bool get isExpired => departureAt.isBefore(DateTime.now());
 
   BusModel({
     required this.id,
@@ -26,7 +34,6 @@ class BusModel {
     required this.driverName,
     required this.numberPlate,
     required this.totalSeats,
-    this.status = 'Active',
     DateTime? createdAt,
     this.averageRating = 0.0,
     this.ratingCount = 0,
@@ -42,6 +49,9 @@ class BusModel {
       'driverName': driverName,
       'numberPlate': numberPlate,
       'totalSeats': totalSeats,
+      // 'status' is still written for readability when inspecting Firestore
+      // directly, but it is NEVER read back - status is always recomputed
+      // from departureAt on load, so this value cannot go stale.
       'status': status,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'averageRating': averageRating,
@@ -61,7 +71,6 @@ class BusModel {
       totalSeats: (map['totalSeats'] is num)
           ? (map['totalSeats'] as num).toInt()
           : 0,
-      status: map['status'] ?? 'Active',
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         map['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
       ),

@@ -21,10 +21,8 @@ class BusCard extends StatelessWidget {
     switch (status) {
       case 'Active':
         return Colors.green;
-      case 'Inactive':
-        return Colors.orange;
-      case 'Maintenance':
-        return Colors.red;
+      case 'Expired':
+        return Colors.grey;
       default:
         return Colors.grey;
     }
