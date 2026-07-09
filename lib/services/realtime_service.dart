@@ -98,4 +98,53 @@ class RealtimeService {
   }) async {
     await _database.ref('seat_data/$busId/$dateKey/locks/$seatNumber').remove();
   }
+
+  /// 🔥 CHANGE A CONFIRMED (BOOKED) SEAT - used when a user edits their own
+  /// pending booking and picks a different seat.
+  ///
+  /// Frees [oldSeatNumber] and marks [newSeatNumber] as booked in a single
+  /// atomic multi-path update, so the seat map can never end up with
+  /// neither seat marked (lost booking) or both seats marked (phantom
+  /// double-booking) if the app crashes mid-operation.
+  ///
+  /// Returns false (and makes no changes) if [newSeatNumber] is already
+  /// booked or locked by someone else by the time this runs.
+  Future<bool> changeBookedSeat({
+    required String busId,
+    required String dateKey,
+    required String oldSeatNumber,
+    required String newSeatNumber,
+    required String userId,
+  }) async {
+    if (oldSeatNumber == newSeatNumber) return true;
+
+    final basePath = 'seat_data/$busId/$dateKey';
+    final newSeatBookedRef = _database.ref('$basePath/booked/$newSeatNumber');
+    final newSeatLockRef = _database.ref('$basePath/locks/$newSeatNumber');
+
+    // Make sure the target seat is actually free right now.
+    final bookedSnap = await newSeatBookedRef.get();
+    if (bookedSnap.exists) return false;
+
+    final lockSnap = await newSeatLockRef.get();
+    if (lockSnap.exists) {
+      final lockData = lockSnap.value;
+      if (lockData is Map) {
+        final expiresAt = (lockData['expiresAt'] as int?) ?? 0;
+        if (expiresAt > DateTime.now().millisecondsSinceEpoch) {
+          return false; // still actively locked by someone else
+        }
+      }
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // Single atomic multi-path update: remove old booked seat, add new one.
+    await _database.ref(basePath).update({
+      'booked/$oldSeatNumber': null,
+      'booked/$newSeatNumber': {'bookedBy': userId, 'bookedAt': now},
+    });
+
+    return true;
+  }
 }

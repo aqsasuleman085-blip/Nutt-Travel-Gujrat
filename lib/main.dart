@@ -8,7 +8,6 @@ import 'package:nutt/admin_side/providers/dashboard_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/admin_side/providers/theme_provider.dart';
 import 'package:nutt/firebase_options.dart';
-import 'package:nutt/welcome_screen.dart';
 import 'package:nutt/splash_screen.dart';
 import 'package:provider/provider.dart';
 

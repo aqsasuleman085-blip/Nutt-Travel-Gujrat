@@ -3,6 +3,7 @@ import 'package:nutt/admin_side/models/booking_model.dart';
 import '../../services/booking_service.dart';
 import 'refund_request_form.dart';
 import 'trip_rating_widget.dart';
+import 'ticket_details_dialog.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -232,168 +233,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
   void _showDetailsDialog(BuildContext context, BookingModel booking) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Ticket Details - ${booking.seatNumber}'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Passenger Information
-              const Text(
-                'PASSENGER INFORMATION',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _detailRow('Passenger Name', booking.userName),
-              _detailRow('Email', booking.userEmail),
-              _detailRow('Phone', booking.phone),
-              _detailRow('CNIC', booking.cnic),
-              _detailRow(
-                'Gender',
-                booking.gender.isEmpty ? 'N/A' : booking.gender,
-              ),
-              const Divider(),
-
-              // Bus & Journey Details
-              const Text(
-                'JOURNEY DETAILS',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _detailRow('Route', '${booking.busFrom} → ${booking.busTo}'),
-              _detailRow('Seat Number', booking.seatNumber),
-              _detailRow(
-                'Travel Date',
-                booking.travelDate.isNotEmpty
-                    ? booking.travelDate
-                    : _formatDate(booking.bookingDate),
-              ),
-              _detailRow(
-                'Departure Time',
-                booking.time.isNotEmpty ? booking.time : 'N/A',
-              ),
-              _detailRow('Booking Date', _formatDate(booking.bookingDate)),
-              const Divider(),
-
-              // Payment Information
-              const Text(
-                'PAYMENT INFORMATION',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _detailRow(
-                'Ticket Price',
-                'Rs ${booking.price.toStringAsFixed(0)}',
-              ),
-              _detailRow(
-                'Total Amount',
-                'Rs ${booking.totalAmount.toStringAsFixed(0)}',
-              ),
-              _detailRow(
-                'Paid Amount',
-                'Rs ${booking.paidAmount.toStringAsFixed(0)}',
-              ),
-              _detailRow('Payment Method', booking.paymentMethod),
-              if (booking.senderName.isNotEmpty)
-                _detailRow('Sender Name', booking.senderName),
-              if (booking.senderNumber.isNotEmpty)
-                _detailRow('Sender Number', booking.senderNumber),
-              if (booking.paymentReference.isNotEmpty)
-                _detailRow('Transaction Ref', booking.paymentReference),
-              const Divider(),
-
-              // Status Information
-              const Text(
-                'STATUS INFORMATION',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _detailRow(
-                'Current Status',
-                booking.status == 'refunded'
-                    ? 'REFUNDED'
-                    : booking.status == 'refund_pending'
-                    ? 'REFUND PENDING'
-                    : booking.status.toUpperCase(),
-              ),
-
-              // Refund Details (if applicable)
-              if (booking.status == 'refund_pending' ||
-                  booking.status == 'refunded') ...[
-                const SizedBox(height: 8),
-                const Text(
-                  'REFUND DETAILS',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (booking.refundAmount.isNotEmpty)
-                  _detailRow('Refund Amount', 'Rs ${booking.refundAmount}'),
-                if (booking.refundAccountName.isNotEmpty)
-                  _detailRow('Refund Account', booking.refundAccountName),
-                if (booking.refundReason.isNotEmpty)
-                  _detailRow('Refund Reason', booking.refundReason),
-                if (booking.refundRequestedAt != null)
-                  _detailRow(
-                    'Requested Date',
-                    _formatDateFromTimestamp(booking.refundRequestedAt!),
-                  ),
-                if (booking.refundApprovedAt != null)
-                  _detailRow(
-                    'Approved Date',
-                    _formatDateFromTimestamp(booking.refundApprovedAt!),
-                  ),
-              ],
-
-              // Rejection Details (if applicable)
-              if (booking.status == 'rejected' &&
-                  booking.rejectionReason.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                const Text(
-                  'REJECTION DETAILS',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _detailRow('Rejection Reason', booking.rejectionReason),
-                if (booking.rejectedAt != null)
-                  _detailRow('Rejected Date', _formatDate(booking.rejectedAt!)),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => TicketDetailsDialog(booking: booking),
     );
   }
+
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';

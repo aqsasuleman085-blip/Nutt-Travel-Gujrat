@@ -7,6 +7,7 @@ import 'package:nutt/services/notification_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/booking_model.dart';
+import 'booking_cleanup_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -20,16 +21,78 @@ class _BookingScreenState extends State<BookingScreen>
   late TabController _tabController;
   String? _processingId;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  DateTimeRange? _dateRange;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  /// Applies the search query (name/CNIC/phone) and date-range filter
+  /// (based on travel date) on top of a status-filtered booking list.
+  List<BookingModel> _applyFilters(List<BookingModel> bookings) {
+    var result = bookings;
+
+    if (_searchQuery.isNotEmpty) {
+      result = result.where((b) {
+        final name = b.userName.toLowerCase();
+        final cnic = b.cnic.toLowerCase();
+        final phone = b.phone.toLowerCase();
+        return name.contains(_searchQuery) ||
+            cnic.contains(_searchQuery) ||
+            phone.contains(_searchQuery);
+      }).toList();
+    }
+
+    if (_dateRange != null) {
+      result = result.where((b) {
+        final travelDate = DateTime.tryParse(b.travelDate);
+        if (travelDate == null) return false;
+        final start = DateTime(
+          _dateRange!.start.year,
+          _dateRange!.start.month,
+          _dateRange!.start.day,
+        );
+        final end = DateTime(
+          _dateRange!.end.year,
+          _dateRange!.end.month,
+          _dateRange!.end.day,
+          23,
+          59,
+          59,
+        );
+        return !travelDate.isBefore(start) && !travelDate.isAfter(end);
+      }).toList();
+    }
+
+    return result;
+  }
+
+  Future<void> _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange: _dateRange,
+    );
+    if (picked != null) {
+      setState(() => _dateRange = picked);
+    }
   }
 
   Future<Map<String, String>?> _showRejectDialog(BookingModel booking) async {
@@ -262,6 +325,23 @@ class _BookingScreenState extends State<BookingScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Booking Management'),
+        actions: [
+          IconButton(
+            icon: Badge(
+              label: Text(provider.expiredBookings.length.toString()),
+              isLabelVisible: provider.expiredBookings.isNotEmpty,
+              child: const Icon(Icons.cleaning_services_outlined),
+            ),
+            tooltip: 'Clean Up Expired Bookings',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const BookingCleanupScreen(),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           labelColor: Colors.white,
           indicatorColor: const Color.fromARGB(255, 255, 255, 255),
@@ -276,18 +356,132 @@ class _BookingScreenState extends State<BookingScreen>
           ],
         ),
       ),
-      body: provider.isLoading
-          ? const LoadingWidget(message: 'Loading...')
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildList(provider.pendingBookings, 'pending'),
-                _buildList(provider.approvedBookings, 'approved'),
-                _buildList(provider.refundPendingBookings, 'refund_pending'),
-                _buildList(provider.refundedBookings, 'refunded'),
-                _buildList(provider.rejectedBookings, 'rejected'),
-              ],
+      body: Column(
+        children: [
+          _buildSearchAndFilterBar(),
+          Expanded(
+            child: provider.isLoading
+                ? const LoadingWidget(message: 'Loading...')
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildList(
+                        _applyFilters(provider.pendingBookings),
+                        'pending',
+                      ),
+                      _buildList(
+                        _applyFilters(provider.approvedBookings),
+                        'approved',
+                      ),
+                      _buildList(
+                        _applyFilters(provider.refundPendingBookings),
+                        'refund_pending',
+                      ),
+                      _buildList(
+                        _applyFilters(provider.refundedBookings),
+                        'refunded',
+                      ),
+                      _buildList(
+                        _applyFilters(provider.rejectedBookings),
+                        'rejected',
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilterBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      color: Colors.white,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 42,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, size: 20, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: const InputDecoration(
+                        hintText: 'Search by name, CNIC, or phone',
+                        hintStyle: TextStyle(fontSize: 13),
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  if (_searchQuery.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => _searchController.clear(),
+                      child: const Icon(Icons.close, size: 18, color: Colors.grey),
+                    ),
+                ],
+              ),
             ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: _pickDateRange,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              height: 42,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: _dateRange != null
+                    ? AppConstants.primaryColor.withOpacity(0.12)
+                    : Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.date_range,
+                    size: 18,
+                    color: _dateRange != null
+                        ? AppConstants.primaryColor
+                        : Colors.grey[700],
+                  ),
+                  if (_dateRange != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_dateRange!.start.month}/${_dateRange!.start.day} - '
+                      '${_dateRange!.end.month}/${_dateRange!.end.day}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppConstants.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () => setState(() => _dateRange = null),
+                      child: Icon(
+                        Icons.close,
+                        size: 14,
+                        color: AppConstants.primaryColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

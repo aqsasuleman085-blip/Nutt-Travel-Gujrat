@@ -38,6 +38,29 @@ class BookingProvider with ChangeNotifier {
   List<BookingModel> get rejectedBookings =>
       _bookings.where((b) => b.status == 'rejected').toList();
 
+  /// Bookings that are safe to clean up: their travel date has passed AND
+  /// they're either 'approved' (trip already happened) or
+  /// 'rejected'/'refunded' (never actually used the seat). 'pending' and
+  /// 'refund_pending' bookings are deliberately excluded even if their
+  /// date has passed, since those still need an admin decision first.
+  List<BookingModel> get expiredBookings {
+    final now = DateTime.now();
+    return _bookings.where((b) {
+      final eligibleStatus = b.status == 'approved' ||
+          b.status == 'rejected' ||
+          b.status == 'refunded';
+      if (!eligibleStatus) return false;
+
+      final travelDate = _parseTravelDate(b.travelDate) ?? b.bookingDate;
+      return travelDate.isBefore(now);
+    }).toList();
+  }
+
+  DateTime? _parseTravelDate(String date) {
+    if (date.isEmpty) return null;
+    return DateTime.tryParse(date);
+  }
+
   void _listenToBookings() {
     _isLoading = true;
     notifyListeners();
@@ -113,7 +136,7 @@ class BookingProvider with ChangeNotifier {
         'updatedAt': now,
       });
 
-      await _realtimeDb.ref('notifications/${booking.userId}').push().set({
+      await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({
         'title': 'Booking Approved',
         'message':
             'Seat ${booking.seatNumber} for ${booking.busFrom} → ${booking.busTo} confirmed',
@@ -192,7 +215,7 @@ class BookingProvider with ChangeNotifier {
         'rejectionReason': rejectionReason,
       });
 
-      await _realtimeDb.ref('notifications/${booking.userId}').push().set({
+      await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({
         'title': 'Booking Rejected',
         'message':
             'Your ticket for seat ${booking.seatNumber} from ${booking.busFrom} → ${booking.busTo} was rejected.\nRefund: Rs $refundAmount\nAccount: $refundAccountName\nReason: $rejectionReason',
@@ -282,7 +305,7 @@ class BookingProvider with ChangeNotifier {
       });
 
       // Send notification to user
-      await _realtimeDb.ref('notifications/${booking.userId}').push().set({
+      await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({
         'title': 'Refund Processed',
         'message':
             'Your refund for seat ${booking.seatNumber} (${booking.busFrom} → ${booking.busTo}) has been processed.\nAmount: Rs $refundAmount\nAccount: $refundAccountName\nReason: ${refundReason.isNotEmpty ? refundReason : 'N/A'}',
@@ -303,6 +326,39 @@ class BookingProvider with ChangeNotifier {
       });
     } catch (e) {
       debugPrint('❌ Refund error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ DELETE a single booking record permanently from Firestore.
+  ///
+  /// Intended for the cleanup workflow (expired bookings whose trip has
+  /// already happened or was never used), NOT for cancelling an active
+  /// booking - that flow already exists via reject/refund, which correctly
+  /// frees the seat and notifies the user first. This delete is a pure
+  /// housekeeping operation on records that no longer need to exist.
+  Future<void> deleteBooking(String bookingId) async {
+    try {
+      await _firestore.collection('bookings').doc(bookingId).delete();
+    } catch (e) {
+      debugPrint('❌ Delete booking error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ BULK DELETE multiple bookings at once (used by "Clean Up Expired"),
+  /// using a single Firestore batch so it's one atomic operation instead of
+  /// N separate network calls.
+  Future<void> deleteBookings(List<String> bookingIds) async {
+    if (bookingIds.isEmpty) return;
+    try {
+      final batch = _firestore.batch();
+      for (final id in bookingIds) {
+        batch.delete(_firestore.collection('bookings').doc(id));
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('❌ Bulk delete error: $e');
       rethrow;
     }
   }

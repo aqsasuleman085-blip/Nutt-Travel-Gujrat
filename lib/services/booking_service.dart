@@ -510,6 +510,116 @@ class BookingService {
     }
   }
 
+  /// ✅ EDIT a PENDING booking's own details (passenger name, phone, CNIC,
+  /// and optionally the seat itself).
+  ///
+  /// Only allowed while the booking is still 'pending' - once the admin
+  /// approves it, the record is locked to protect the integrity of what
+  /// was actually approved (matching the same "locked once approved"
+  /// pattern already used for refunds/deletes elsewhere in this service).
+  ///
+  /// If [newSeatNumber] differs from the booking's current seat, the seat
+  /// change goes through the same atomic Realtime Database update used by
+  /// the seat-locking system, so the seat map can never end up
+  /// inconsistent (lost seat or phantom double-booking).
+  Future<void> updateBookingDetails({
+    required String bookingId,
+    required String passengerName,
+    required String phone,
+    required String cnic,
+    String? newSeatNumber,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    final bookingRef = _firestore.collection('bookings').doc(bookingId);
+    final snapshot = await bookingRef.get();
+
+    if (!snapshot.exists) {
+      throw Exception('Booking not found');
+    }
+
+    final booking = BookingModel.fromMap({
+      'id': bookingId,
+      ...snapshot.data()!,
+    });
+
+    if (booking.userId != user.uid) {
+      throw Exception('You can only edit your own booking');
+    }
+    if (booking.status != 'pending') {
+      throw Exception(
+        'This booking can no longer be edited because it is no longer pending.',
+      );
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    String finalSeatNumber = booking.seatNumber;
+
+    // Handle a seat change, if one was requested.
+    if (newSeatNumber != null &&
+        newSeatNumber.isNotEmpty &&
+        newSeatNumber != booking.seatNumber) {
+      final dateKey = _dateKey(booking.travelDate);
+
+      final basePath = 'seat_data/${booking.busId}/$dateKey';
+      final newSeatBookedRef = _realtimeDb.ref('$basePath/booked/$newSeatNumber');
+      final newSeatLockRef = _realtimeDb.ref('$basePath/locks/$newSeatNumber');
+
+      final bookedSnap = await newSeatBookedRef.get();
+      if (bookedSnap.exists) {
+        throw Exception('Seat $newSeatNumber is already booked. Please choose another seat.');
+      }
+
+      final lockSnap = await newSeatLockRef.get();
+      if (lockSnap.exists) {
+        final lockData = lockSnap.value;
+        if (lockData is Map) {
+          final expiresAt = (lockData['expiresAt'] as int?) ?? 0;
+          if (expiresAt > now) {
+            throw Exception('Seat $newSeatNumber is currently being booked by someone else. Please choose another seat.');
+          }
+        }
+      }
+
+      // Atomic multi-path update: free the old seat, claim the new one.
+      await _realtimeDb.ref(basePath).update({
+        'booked/${booking.seatNumber}': null,
+        'booked/$newSeatNumber': {'bookedBy': user.uid, 'bookedAt': now},
+      });
+
+      finalSeatNumber = newSeatNumber;
+    }
+
+    // Update the booking document itself.
+    await bookingRef.update({
+      'userName': passengerName,
+      'userPhone': phone,
+      'userCnic': cnic,
+      'seatNumber': finalSeatNumber,
+      'updatedAt': now,
+    });
+
+    // Notify admin that a pending booking was edited by the user, so they
+    // review the latest details before approving/rejecting.
+    try {
+      await _realtimeDb.ref('admin_notifications').push().set({
+        'title': 'Booking Updated by User',
+        'message': '$passengerName updated their pending booking '
+            '(seat $finalSeatNumber, ${booking.busFrom} → ${booking.busTo}). '
+            'Please review before approving.',
+        'type': 'booking',
+        'bookingId': bookingId,
+        'isRead': false,
+        'createdAt': now,
+      });
+    } catch (e) {
+      // A notification failure should not block the edit itself.
+      // ignore: avoid_print
+      print('Failed to send admin notification for booking edit: $e');
+    }
+  }
+
   /// ✅ HELPER: Format date key for Realtime DB
   String _dateKey(String date) {
     final parsed = DateTime.tryParse(date);
