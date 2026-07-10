@@ -4,6 +4,8 @@ import 'package:nutt/user/presentation/profile_screen.dart';
 import 'package:nutt/user/presentation/tickets_screen.dart';
 import 'package:nutt/user/services/notification_service.dart';
 import 'notification_screen.dart';
+import 'pakistani_cities.dart';
+import 'themed_date_picker.dart';
 
 import '../../services/bus_service.dart';
 
@@ -121,56 +123,40 @@ class _HomeTabState extends State<HomeTab> {
   String toCity = "Select Destination";
   DateTime? selectedDate;
 
-  void selectCity(bool isFrom, List<String> options) {
+  void selectCity(bool isFrom) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          color: Colors.white,
-          child: ListView(
-            padding: const EdgeInsets.all(10),
-            children: options.map((city) {
-              return Card(
-                color: Colors.white,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListTile(
-                  leading: Icon(Icons.location_city, color: themeColor),
-                  title: Text(
-                    city,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  onTap: () {
-                    setState(() {
-                      if (isFrom) {
-                        fromCity = city;
-                        toCity = "Select Destination";
-                      } else {
-                        toCity = city;
-                      }
-                    });
-                    Navigator.pop(context);
-                  },
-                ),
-              );
-            }).toList(),
-          ),
+        return _CityPickerSheet(
+          themeColor: themeColor,
+          title: isFrom ? 'Select Departure City' : 'Select Destination',
+          cities: kPakistaniCities,
+          excludeCity: isFrom ? null : (fromCity == "Select City" ? null : fromCity),
+          onSelected: (city) {
+            setState(() {
+              if (isFrom) {
+                fromCity = city;
+                // Reset destination if it now matches the new departure.
+                if (toCity == city) {
+                  toCity = "Select Destination";
+                }
+              } else {
+                toCity = city;
+              }
+            });
+            Navigator.pop(context);
+          },
         );
       },
     );
   }
 
   void selectDate() async {
-    DateTime? picked = await showDatePicker(
+    DateTime? picked = await showThemedDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
@@ -217,19 +203,22 @@ class _HomeTabState extends State<HomeTab> {
         stream: _busService.streamBuses(),
         builder: (context, snapshot) {
           final buses = snapshot.data ?? [];
-          final dateFiltered = selectedDate == null
-              ? buses
-              : buses.where((b) => _isSameDay(b.departureAt, selectedDate!));
 
-          final fromOptions = dateFiltered.map((b) => b.from).toSet().toList()
-            ..sort();
-          final toOptions =
-              dateFiltered
-                  .where((b) => fromCity == "Select City" || b.from == fromCity)
-                  .map((b) => b.to)
-                  .toSet()
-                  .toList()
-                ..sort();
+          // Whether at least one bus exists for the exact From -> To route
+          // on the selected date. Only meaningful once all three fields
+          // are picked; used purely for the inline hint below the date
+          // field, not for filtering the city pickers themselves.
+          bool? routeHasBuses;
+          if (fromCity != "Select City" &&
+              toCity != "Select Destination" &&
+              selectedDate != null) {
+            routeHasBuses = buses.any(
+              (b) =>
+                  citiesMatch(b.from, fromCity) &&
+                  citiesMatch(b.to, toCity) &&
+                  _isSameDay(b.departureAt, selectedDate!),
+            );
+          }
 
           return SingleChildScrollView(
             child: Column(
@@ -366,7 +355,7 @@ class _HomeTabState extends State<HomeTab> {
                   child: Column(
                     children: [
                       GestureDetector(
-                        onTap: () => selectCity(true, fromOptions),
+                        onTap: () => selectCity(true),
                         child: buildField(fromCity, Icons.location_on),
                       ),
                       const SizedBox(height: 10),
@@ -383,7 +372,7 @@ class _HomeTabState extends State<HomeTab> {
                       ),
                       const SizedBox(height: 10),
                       GestureDetector(
-                        onTap: () => selectCity(false, toOptions),
+                        onTap: () => selectCity(false),
                         child: buildField(toCity, Icons.flag),
                       ),
                       const SizedBox(height: 10),
@@ -396,6 +385,55 @@ class _HomeTabState extends State<HomeTab> {
                           Icons.calendar_today,
                         ),
                       ),
+                      if (routeHasBuses != null) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: routeHasBuses
+                                ? themeColor.withOpacity(0.1)
+                                : Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: routeHasBuses
+                                  ? themeColor.withOpacity(0.3)
+                                  : Colors.orange.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                routeHasBuses
+                                    ? Icons.check_circle
+                                    : Icons.info_outline,
+                                size: 16,
+                                color: routeHasBuses
+                                    ? themeColor
+                                    : Colors.orange[800],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  routeHasBuses
+                                      ? 'Buses are available for this route on this date'
+                                      : 'No buses are going to that route on this date',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: routeHasBuses
+                                        ? themeColor
+                                        : Colors.orange[800],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
@@ -481,5 +519,155 @@ class _HomeTabState extends State<HomeTab> {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+}
+
+/// Bottom sheet for picking a city from the full Pakistani cities list,
+/// with a search box since the list is long (~30 cities). If
+/// [excludeCity] is provided (the already-picked departure city), it's
+/// filtered out of the destination list so a user can't pick the same
+/// city for both fields.
+class _CityPickerSheet extends StatefulWidget {
+  final Color themeColor;
+  final String title;
+  final List<String> cities;
+  final String? excludeCity;
+  final ValueChanged<String> onSelected;
+
+  const _CityPickerSheet({
+    required this.themeColor,
+    required this.title,
+    required this.cities,
+    required this.onSelected,
+    this.excludeCity,
+  });
+
+  @override
+  State<_CityPickerSheet> createState() => _CityPickerSheetState();
+}
+
+class _CityPickerSheetState extends State<_CityPickerSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.cities
+        .where((c) => c != widget.excludeCity)
+        .where((c) => c.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: widget.themeColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, size: 20, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              autofocus: false,
+                              decoration: const InputDecoration(
+                                hintText: 'Search city',
+                                hintStyle: TextStyle(fontSize: 13),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                              style: const TextStyle(fontSize: 14),
+                              onChanged: (value) {
+                                setState(() => _query = value);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No city matches your search',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final city = filtered[index];
+                          return ListTile(
+                            leading: Icon(
+                              Icons.location_city,
+                              color: widget.themeColor,
+                            ),
+                            title: Text(
+                              city,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onTap: () => widget.onSelected(city),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

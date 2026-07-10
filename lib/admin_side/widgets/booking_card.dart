@@ -6,7 +6,16 @@ class BookingCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onApprove;
   final VoidCallback? onReject;
-  final VoidCallback? onRefund; // ADD THIS LINE
+  final VoidCallback? onRefund;
+
+  /// When this booking has one or more linked "extra seats" bookings in
+  /// the same status/tab, these carry the combined display values so the
+  /// card can show "Seats 7, 9, 10" and the combined total instead of just
+  /// this one booking's own seat/amount. If there are no linked addons,
+  /// these simply match the booking's own seatNumber/totalAmount.
+  final String? combinedSeatLabel;
+  final double? combinedTotalAmount;
+  final int extraSeatsCount;
 
   const BookingCard({
     Key? key,
@@ -14,11 +23,17 @@ class BookingCard extends StatelessWidget {
     this.onTap,
     this.onApprove,
     this.onReject,
-    this.onRefund, // ADD THIS LINE
+    this.onRefund,
+    this.combinedSeatLabel,
+    this.combinedTotalAmount,
+    this.extraSeatsCount = 0,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final displaySeats = combinedSeatLabel ?? booking.seatNumber;
+    final displayAmount = combinedTotalAmount ?? booking.totalAmount;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -61,10 +76,33 @@ class BookingCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Seat: ${booking.seatNumber}'),
+              Row(
+                children: [
+                  Expanded(child: Text('Seat: $displaySeats')),
+                  if (extraSeatsCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '+$extraSeatsCount seat${extraSeatsCount == 1 ? '' : 's'} added',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               Text('Route: ${booking.busFrom} → ${booking.busTo}'),
               Text('Date: ${booking.travelDate}'),
-              Text('Amount: Rs ${booking.totalAmount}'),
+              Text('Amount: Rs ${displayAmount.toStringAsFixed(0)}'),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,

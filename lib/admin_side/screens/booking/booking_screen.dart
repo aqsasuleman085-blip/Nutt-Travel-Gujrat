@@ -485,6 +485,39 @@ class _BookingScreenState extends State<BookingScreen>
     );
   }
 
+  /// Groups bookings so that an original booking and any "extra seats"
+  /// bookings linked to it (via linkedBookingId) are combined into ONE
+  /// display entry when they're both present in this SAME status-filtered
+  /// list (i.e. both currently have the same status, e.g. both approved).
+  /// If the original and its addon have DIFFERENT statuses, they simply
+  /// won't both appear in the same tab, so each stays a separate card in
+  /// its own tab - no special-casing needed for that.
+  List<_MergedBookingEntry> _mergeLinkedBookings(List<BookingModel> bookings) {
+    final byId = {for (final b in bookings) b.id: b};
+    final result = <_MergedBookingEntry>[];
+
+    for (final booking in bookings) {
+      if (booking.linkedBookingId.isNotEmpty) {
+        // This is an addon booking. If its original is ALSO in this same
+        // list, skip it here - it'll be attached under the original below.
+        if (byId.containsKey(booking.linkedBookingId)) continue;
+        // Its original isn't in this list (different status/tab) - show
+        // this addon on its own, as before.
+        result.add(_MergedBookingEntry(primary: booking, extras: const []));
+        continue;
+      }
+
+      // This is an original booking - gather any addons for it that are
+      // also present in this same list.
+      final addons = bookings
+          .where((b) => b.linkedBookingId == booking.id)
+          .toList();
+      result.add(_MergedBookingEntry(primary: booking, extras: addons));
+    }
+
+    return result;
+  }
+
   Widget _buildList(List<BookingModel> bookings, String status) {
     if (bookings.isEmpty) {
       return Center(
@@ -502,17 +535,23 @@ class _BookingScreenState extends State<BookingScreen>
       );
     }
 
+    final merged = _mergeLinkedBookings(bookings);
+
     return ListView.builder(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
-      itemCount: bookings.length,
+      itemCount: merged.length,
       itemBuilder: (context, index) {
-        final booking = bookings[index];
+        final entry = merged[index];
+        final booking = entry.primary;
         final isProcessing = _processingId == booking.id;
 
         return Stack(
           children: [
             BookingCard(
               booking: booking,
+              combinedSeatLabel: entry.combinedSeatLabel,
+              combinedTotalAmount: entry.combinedTotalAmount,
+              extraSeatsCount: entry.extras.length,
               onTap: () => _showDetails(booking),
 
               // Approve button (only for pending)
@@ -664,5 +703,31 @@ class _BookingScreenState extends State<BookingScreen>
         ],
       ),
     );
+  }
+}
+
+/// Groups an original booking together with any "extra seats" bookings
+/// linked to it (present in the same status-filtered list), so the admin
+/// UI can display them as one combined card - e.g. original seat 7 plus
+/// an addon for seats 9,10 shows as "Seats 7, 9, 10" with the combined
+/// total price - while each remains a separate Firestore document
+/// underneath.
+class _MergedBookingEntry {
+  final BookingModel primary;
+  final List<BookingModel> extras;
+
+  _MergedBookingEntry({required this.primary, required this.extras});
+
+  /// e.g. "7, 9, 10" - the primary's seat(s) followed by every extra
+  /// booking's seat(s), in booking order.
+  String get combinedSeatLabel {
+    if (extras.isEmpty) return primary.seatNumber;
+    final allSeats = [primary.seatNumber, ...extras.map((b) => b.seatNumber)];
+    return allSeats.join(', ');
+  }
+
+  double get combinedTotalAmount {
+    return primary.totalAmount +
+        extras.fold(0.0, (sum, b) => sum + b.totalAmount);
   }
 }

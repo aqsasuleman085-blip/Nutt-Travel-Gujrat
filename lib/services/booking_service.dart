@@ -620,6 +620,167 @@ class BookingService {
     }
   }
 
+  /// ✅ ADD MORE SEATS to an existing booking.
+  ///
+  /// Does NOT modify the original booking at all - it creates a brand new
+  /// linked booking document covering the additional seats only, using the
+  /// same 'pending' → admin-approval flow as any other booking. This keeps
+  /// the original booking's seat/record completely untouched (per design),
+  /// while letting the same user book more seats on the same bus/date.
+  ///
+  /// [extraSeats] must all be currently free (not booked or actively
+  /// locked) - each one is claimed atomically before the booking document
+  /// is created, and if any of them turns out to be taken, nothing is
+  /// created and an exception is thrown.
+  Future<String> addExtraSeats({
+    required BookingModel originalBooking,
+    required List<String> extraSeats,
+    required String senderName,
+    required String senderNumber,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+    if (originalBooking.userId != user.uid) {
+      throw Exception('You can only add seats to your own booking');
+    }
+    if (extraSeats.isEmpty) {
+      throw Exception('Please select at least one seat to add');
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final dateKey = _dateKey(originalBooking.travelDate);
+    final basePath = 'seat_data/${originalBooking.busId}/$dateKey';
+
+    // Verify every requested seat is still free right now, and claim them
+    // all in one atomic multi-path update so two people can't grab the
+    // same seat in the gap between checking and booking.
+    final updates = <String, dynamic>{};
+    for (final seat in extraSeats) {
+      final bookedSnap = await _realtimeDb.ref('$basePath/booked/$seat').get();
+      if (bookedSnap.exists) {
+        throw Exception('Seat $seat is already booked. Please choose another seat.');
+      }
+      final lockSnap = await _realtimeDb.ref('$basePath/locks/$seat').get();
+      if (lockSnap.exists) {
+        final lockData = lockSnap.value;
+        if (lockData is Map) {
+          final expiresAt = (lockData['expiresAt'] as int?) ?? 0;
+          if (expiresAt > now) {
+            throw Exception('Seat $seat is currently being booked by someone else.');
+          }
+        }
+      }
+      updates['booked/$seat'] = {'bookedBy': user.uid, 'bookedAt': now};
+    }
+
+    await _realtimeDb.ref(basePath).update(updates);
+
+    // Price: same per-seat price as the original booking, x number of
+    // extra seats.
+    final perSeatPrice = originalBooking.price;
+    final totalAmount = perSeatPrice * extraSeats.length;
+    final combinedSeatLabel = extraSeats.join(',');
+
+    final docRef = _firestore.collection('bookings').doc();
+    final bookingData = {
+      'bookingId': docRef.id,
+      'id': docRef.id,
+      'userId': user.uid,
+      'userName': originalBooking.userName,
+      'userEmail': user.email ?? '',
+      'userPhone': originalBooking.phone,
+      'userCnic': originalBooking.cnic,
+      'userGender': originalBooking.gender,
+      'busId': originalBooking.busId,
+      'busFrom': originalBooking.busFrom,
+      'busTo': originalBooking.busTo,
+      'seatNumber': combinedSeatLabel,
+      'travelDate': originalBooking.travelDate,
+      'time': originalBooking.time,
+      'paymentMethod': 'JazzCash',
+      'senderName': senderName,
+      'senderNumber': senderNumber,
+      'paidAmount': totalAmount,
+      'totalAmount': totalAmount,
+      'price': perSeatPrice,
+      'paymentReference': '',
+      'status': 'pending',
+      'refundStatus': 'none',
+      'createdAt': now,
+      'updatedAt': now,
+      'bookingDate': Timestamp.now(),
+      'linkedBookingId': originalBooking.id,
+    };
+
+    await docRef.set(bookingData);
+
+    await _realtimeDb.ref('booking_status/${docRef.id}').set({
+      'status': 'pending',
+      'refundStatus': 'none',
+      'updatedAt': now,
+    });
+
+    // Notify admin, same as any new booking.
+    try {
+      await _realtimeDb.ref('admin_notifications').push().set({
+        'title': 'Additional Seats Requested',
+        'message': '${originalBooking.userName} requested ${extraSeats.length} '
+                'more seat(s) ($combinedSeatLabel) on their existing booking '
+                '(${originalBooking.busFrom} → ${originalBooking.busTo}) - '
+            'Amount: Rs ${totalAmount.toStringAsFixed(0)}',
+        'type': 'booking',
+        'bookingId': docRef.id,
+        'linkedBookingId': originalBooking.id,
+        'isRead': false,
+        'createdAt': now,
+      });
+    } catch (e) {
+      // ignore: avoid_print
+      print('Failed to send admin notification for extra seats: $e');
+    }
+
+    return docRef.id;
+  }
+
+  /// ✅ Fetch every booking related to a given booking: the original
+  /// booking itself, plus every "extra seats" booking linked to it (and,
+  /// if [booking] IS an addon booking, its sibling addons too). Used by
+  /// the "Add More Seats" section to show the user everything they've
+  /// already booked on this same original reservation before they add more.
+  Future<List<BookingModel>> getRelatedBookings(BookingModel booking) async {
+    final user = _auth.currentUser;
+    if (user == null) return [booking];
+
+    // The "root" booking ID: if this booking is itself an addon, its root
+    // is whatever it's linked to; otherwise it IS the root.
+    final rootId = booking.linkedBookingId.isNotEmpty
+        ? booking.linkedBookingId
+        : booking.id;
+
+    try {
+      final snapshot = await _firestore
+          .collection('bookings')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      final all = snapshot.docs
+          .map((doc) => BookingModel.fromMap({'id': doc.id, ...doc.data()}))
+          .where(
+            (b) =>
+                b.id == rootId || // the root booking itself
+                b.linkedBookingId == rootId, // any addon linked to the root
+          )
+          .toList();
+
+      all.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      return all;
+    } catch (e) {
+      // If this lookup fails for any reason, fall back to just showing
+      // the current booking rather than blocking the Add Seats flow.
+      return [booking];
+    }
+  }
+
   /// ✅ HELPER: Format date key for Realtime DB
   String _dateKey(String date) {
     final parsed = DateTime.tryParse(date);

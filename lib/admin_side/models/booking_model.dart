@@ -46,6 +46,11 @@ class BookingModel {
   final int userRating;
   final String userRatingComment;
 
+  // LINKED BOOKING: set when this booking was created as "additional
+  // seats" for an existing booking (via the Add More Seats flow), so the
+  // two can be traced back to each other. Empty for normal bookings.
+  final String linkedBookingId;
+
   BookingModel({
     required this.id,
     required this.userId,
@@ -80,6 +85,7 @@ class BookingModel {
     this.hiddenFor = const [],
     this.userRating = 0,
     this.userRatingComment = '',
+    this.linkedBookingId = '',
     DateTime? bookingDate,
     DateTime? createdAt,
   }) : bookingDate = bookingDate ?? DateTime.now(),
@@ -126,6 +132,8 @@ class BookingModel {
       // Rating
       'userRating': userRating,
       'userRatingComment': userRatingComment,
+      // Linked booking (addon seats)
+      'linkedBookingId': linkedBookingId,
     };
   }
 
@@ -172,6 +180,7 @@ class BookingModel {
           ? (map['userRating'] as num).toInt()
           : 0,
       userRatingComment: map['userRatingComment'] ?? '',
+      linkedBookingId: map['linkedBookingId'] ?? '',
       bookingDate: _toDateTime(map['createdAt'] ?? map['bookingDate']),
       createdAt: _toDateTime(map['createdAt'], fallbackToNow: true),
     );
