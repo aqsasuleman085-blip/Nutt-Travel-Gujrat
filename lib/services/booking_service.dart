@@ -417,6 +417,22 @@ class BookingService {
       'updatedAt': now,
     });
 
+    // ✅ Mark this seat as "pending approval" in the seat map, so other
+    // users browsing the same bus/date see it as unavailable (a distinct
+    // color) instead of still-available while this booking waits for
+    // admin approval. Without this, a second user could select the same
+    // seat during the approval window since the old code only wrote to
+    // 'booked/' at approval time, not at booking-creation time.
+    //
+    // admin_side/providers/booking_provider.dart's approveBooking() moves
+    // this into 'booked/' and clears this node; rejectBooking() just
+    // clears this node, freeing the seat back to available.
+    await _realtimeDb.ref('seat_data/$busId/$dateKey/pending/$seat').set({
+      'bookingId': docRef.id,
+      'requestedBy': user.uid,
+      'requestedAt': now,
+    });
+
     // ✅ Notify admin of the new booking request, so it shows up on the
     // admin side's notification list (same 'admin_notifications' path the
     // refund flow already uses).

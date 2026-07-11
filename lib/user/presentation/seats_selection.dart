@@ -94,6 +94,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
               children: [
                 LegendItem(color: emeraldGreen, text: "Available"),
                 LegendItem(color: Colors.orange, text: "Selected"),
+                LegendItem(color: Colors.red, text: "Pending"),
                 LegendItem(color: Colors.grey, text: "Booked"),
               ],
             ),
@@ -116,6 +117,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 final bookedSeats = data['booked'] is Map
                     ? Map<String, dynamic>.from(data['booked'])
                     : {};
+                final pendingSeats = data['pending'] is Map
+                    ? Map<String, dynamic>.from(data['pending'])
+                    : {};
 
                 return GridView.builder(
                   padding: const EdgeInsets.all(12),
@@ -136,10 +140,22 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
                     final isBooked = bookedSeats.containsKey(seat.toString());
 
+                    // A seat is "pending approval" once a booking has been
+                    // submitted for it but the admin hasn't approved or
+                    // rejected it yet. Without tracking this separately,
+                    // the seat would incorrectly show as available (green)
+                    // during the approval wait, letting a second user pick
+                    // the same seat.
+                    final isPendingApproval = pendingSeats.containsKey(
+                      seat.toString(),
+                    );
+
                     Color color = emeraldGreen.withOpacity(0.8);
 
                     if (isBooked) {
                       color = Colors.grey; // permanently booked
+                    } else if (isPendingApproval) {
+                      color = Colors.red; // awaiting admin approval
                     } else if (isLocked) {
                       color = Colors.grey; // temporarily locked
                     } else if (tempSelected.contains(seat)) {
@@ -151,7 +167,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     }
 
                     return GestureDetector(
-                      onTap: (isLocked || isBooked)
+                      onTap: (isLocked || isBooked || isPendingApproval)
                           ? null
                           : () => _selectAndProceed(seat),
                       child: Column(

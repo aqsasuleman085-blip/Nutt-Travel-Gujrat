@@ -126,6 +126,13 @@ class BookingProvider with ChangeNotifier {
           )
           .remove();
 
+      // Clear the "pending approval" marker now that the seat is booked.
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/pending/${booking.seatNumber}',
+          )
+          .remove();
+
       await _realtimeDb.ref('booking_status/$bookingId').set({
         'status': 'approved',
         'updatedAt': now,
@@ -199,6 +206,14 @@ class BookingProvider with ChangeNotifier {
           )
           .remove();
 
+      // Clear the "pending approval" marker so the seat becomes available
+      // again for other users.
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/pending/${booking.seatNumber}',
+          )
+          .remove();
+
       await _realtimeDb.ref('booking_status/$bookingId').set({
         'status': 'rejected',
         'updatedAt': now,
@@ -250,6 +265,12 @@ class BookingProvider with ChangeNotifier {
       if (booking.status != 'refund_pending') {
         throw Exception('Booking is not in refund pending state');
       }
+
+      final dateKey = _dateKey(
+        booking.travelDate.isNotEmpty
+            ? booking.travelDate
+            : booking.bookingDate.toIso8601String(),
+      );
 
       // Update refund request status
       final refundQuery = await _firestore
@@ -303,6 +324,16 @@ class BookingProvider with ChangeNotifier {
         'refundReason': refundReason,
         'updatedAt': now,
       });
+
+      // ✅ Free the seat now that the refund is complete - previously this
+      // was never done, so a refunded booking's seat stayed permanently
+      // marked as booked (grey) in the seat map even though nobody could
+      // actually use that ticket anymore.
+      await _realtimeDb
+          .ref(
+            'seat_data/${booking.busId}/$dateKey/booked/${booking.seatNumber}',
+          )
+          .remove();
 
       // Send notification to user
       await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({

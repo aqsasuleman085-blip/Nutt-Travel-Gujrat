@@ -15,7 +15,7 @@ class RealtimeService {
         return Map<String, dynamic>.from(data);
       }
 
-      return {"locks": {}, "booked": {}};
+      return {"locks": {}, "booked": {}, "pending": {}};
     });
   }
 
