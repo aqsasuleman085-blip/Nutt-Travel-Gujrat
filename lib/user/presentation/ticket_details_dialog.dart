@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
 
+import '../../services/booking_service.dart';
 import 'add_extra_seats_dialog.dart';
 import 'edit_passenger_dialog.dart';
 
@@ -10,17 +11,79 @@ import 'edit_passenger_dialog.dart';
 /// (see edit_passenger_dialog.dart / add_extra_seats_dialog.dart) styled
 /// with the shared StyledFormDialog shell so they look consistent with
 /// each other.
-class TicketDetailsDialog extends StatelessWidget {
+class TicketDetailsDialog extends StatefulWidget {
   final BookingModel booking;
 
   const TicketDetailsDialog({super.key, required this.booking});
 
+  @override
+  State<TicketDetailsDialog> createState() => _TicketDetailsDialogState();
+}
+
+class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
+  final BookingService _bookingService = BookingService();
+
+  // Whether the ROOT booking of this reservation (this booking itself if
+  // it has no linkedBookingId, or whatever it's linked to otherwise) is
+  // still 'pending'. "Add More Seats" is only allowed while the root is
+  // pending - once the admin approves or rejects the root, the whole
+  // reservation (root + every addon) is locked, even if a specific addon
+  // booking's own status still happens to say 'pending'.
+  bool _rootIsPending = false;
+  bool _loadingRootStatus = true;
+
+  BookingModel get booking => widget.booking;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRootStatus();
+  }
+
+  Future<void> _loadRootStatus() async {
+    if (booking.linkedBookingId.isEmpty) {
+      // This booking IS the root.
+      setState(() {
+        _rootIsPending = booking.status == 'pending';
+        _loadingRootStatus = false;
+      });
+      return;
+    }
+
+    try {
+      final root = await _bookingService.getBookingById(
+        booking.linkedBookingId,
+      );
+      if (mounted) {
+        setState(() {
+          _rootIsPending = root?.status == 'pending';
+          _loadingRootStatus = false;
+        });
+      }
+    } catch (e) {
+      // If we can't confirm the root is still pending, default to NOT
+      // allowing seat additions - safer to block than to accidentally
+      // allow adding seats onto an already-decided reservation.
+      if (mounted) {
+        setState(() {
+          _rootIsPending = false;
+          _loadingRootStatus = false;
+        });
+      }
+    }
+  }
+
   bool get _canEdit => booking.status == 'pending';
 
-  // Adding more seats is allowed regardless of this booking's status - it's
-  // a NEW booking, not a change to this one. Only blocked if this booking
-  // is itself an addon (to keep the link one level deep).
-  bool get _canAddSeats => booking.linkedBookingId.isEmpty;
+  // Adding more seats requires BOTH: this specific booking still being
+  // pending, AND the reservation's root booking still being pending (see
+  // _loadRootStatus above). Also blocked if this booking is itself an
+  // addon that has its own addons (kept one level deep).
+  bool get _canAddSeats =>
+      !_loadingRootStatus &&
+      _rootIsPending &&
+      booking.status == 'pending' &&
+      booking.linkedBookingId.isEmpty;
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-'

@@ -27,6 +27,7 @@ class BookingModel {
   // REFUND FIELDS
   final String refundAmount;
   final String refundAccountName;
+  final String refundAccountNumber;
   final String refundStatus;
   final String refundReason;
   final int? refundRequestedAt;
@@ -76,6 +77,7 @@ class BookingModel {
     this.travelDate = '',
     this.refundAmount = '',
     this.refundAccountName = '',
+    this.refundAccountNumber = '',
     this.refundStatus = 'none',
     this.refundReason = '',
     this.refundRequestedAt,
@@ -120,6 +122,7 @@ class BookingModel {
       // Refund fields
       'refundAmount': refundAmount,
       'refundAccountName': refundAccountName,
+      'refundAccountNumber': refundAccountNumber,
       'refundStatus': refundStatus,
       'refundReason': refundReason,
       'refundRequestedAt': refundRequestedAt,
@@ -164,6 +167,7 @@ class BookingModel {
       // Refund fields
       refundAmount: map['refundAmount']?.toString() ?? '',
       refundAccountName: map['refundAccountName'] ?? '',
+      refundAccountNumber: map['refundAccountNumber'] ?? '',
       refundStatus: map['refundStatus'] ?? 'none',
       refundReason: map['refundReason'] ?? '',
       refundRequestedAt: map['refundRequestedAt'],

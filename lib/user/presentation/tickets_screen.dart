@@ -267,7 +267,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }
 
   /// Build ticket card
-  Widget buildTicketCard(BookingModel booking) {
+  Widget buildTicketCard(_MergedTicketEntry entry) {
+    final booking = entry.primary;
     final isRefunded = booking.status == 'refunded';
     final isRefundPending = booking.status == 'refund_pending';
     final isRejected = booking.status == 'rejected';
@@ -502,12 +503,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Seat: ${booking.seatNumber}",
-                    style: const TextStyle(fontSize: 13),
+                  Expanded(
+                    child: Text(
+                      "Seat: ${entry.combinedSeatLabel}",
+                      style: const TextStyle(fontSize: 13),
+                    ),
                   ),
                   Text(
-                    "Rs ${booking.price.toStringAsFixed(0)}",
+                    "Rs ${entry.combinedTotalAmount.toStringAsFixed(0)}",
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -515,6 +518,27 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ),
                 ],
               ),
+              if (entry.extras.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: themeColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '+${entry.extras.length} extra seat${entry.extras.length == 1 ? '' : 's'} added',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: themeColor,
+                    ),
+                  ),
+                ),
+              ],
 
               // Show refund reason preview if available
               if (booking.refundReason.isNotEmpty &&
@@ -748,10 +772,15 @@ class _TicketsScreenState extends State<TicketsScreen> {
           onRefresh: () async {
             setState(() {});
           },
-          child: ListView.builder(
-            itemCount: allBookings.length,
-            itemBuilder: (context, index) =>
-                buildTicketCard(allBookings[index]),
+          child: Builder(
+            builder: (context) {
+              final merged = _mergeUserTickets(allBookings);
+              return ListView.builder(
+                itemCount: merged.length,
+                itemBuilder: (context, index) =>
+                    buildTicketCard(merged[index]),
+              );
+            },
           ),
         );
       },
@@ -811,4 +840,55 @@ class _DashedLinePainter extends CustomPainter {
   bool shouldRepaint(covariant _DashedLinePainter oldDelegate) {
     return oldDelegate.color != color;
   }
+}
+
+/// Groups a root booking together with any "extra seats" bookings linked
+/// to it, so the user's ticket list shows ONE combined card per
+/// reservation instead of a separate card for every add-more-seats
+/// request - mirrors the same merge the admin side already does in
+/// booking_screen.dart. Unlike the admin side (which only merges within
+/// the same status tab), this merge always applies regardless of status,
+/// since the user only ever sees their own tickets in one flat list (no
+/// tabs) and always wants to see everything they booked together as one
+/// reservation.
+class _MergedTicketEntry {
+  final BookingModel primary;
+  final List<BookingModel> extras;
+
+  _MergedTicketEntry({required this.primary, required this.extras});
+
+  String get combinedSeatLabel {
+    if (extras.isEmpty) return primary.seatNumber;
+    final allSeats = [primary.seatNumber, ...extras.map((b) => b.seatNumber)];
+    return allSeats.join(', ');
+  }
+
+  double get combinedTotalAmount {
+    return primary.totalAmount +
+        extras.fold(0.0, (sum, b) => sum + b.totalAmount);
+  }
+}
+
+/// Groups a flat list of bookings (root + addons all mixed together, as
+/// they come from streamUserBookings()) into merged entries - one per
+/// reservation. An addon whose root ISN'T in this list (e.g. it was
+/// individually soft-deleted) is shown on its own instead of being lost.
+List<_MergedTicketEntry> _mergeUserTickets(List<BookingModel> bookings) {
+  final byId = {for (final b in bookings) b.id: b};
+  final result = <_MergedTicketEntry>[];
+
+  for (final booking in bookings) {
+    if (booking.linkedBookingId.isNotEmpty) {
+      if (byId.containsKey(booking.linkedBookingId)) continue;
+      result.add(_MergedTicketEntry(primary: booking, extras: const []));
+      continue;
+    }
+
+    final addons = bookings
+        .where((b) => b.linkedBookingId == booking.id)
+        .toList();
+    result.add(_MergedTicketEntry(primary: booking, extras: addons));
+  }
+
+  return result;
 }

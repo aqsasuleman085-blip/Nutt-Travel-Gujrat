@@ -162,6 +162,7 @@ class BookingProvider with ChangeNotifier {
     required String bookingId,
     required String refundAmount,
     required String refundAccountName,
+    required String refundAccountNumber,
     required String rejectionReason,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -191,6 +192,7 @@ class BookingProvider with ChangeNotifier {
         'rejectedAt': now,
         'refundAmount': refundAmount,
         'refundAccountName': refundAccountName,
+        'refundAccountNumber': refundAccountNumber,
         'rejectionReason': rejectionReason,
       });
 
@@ -219,6 +221,7 @@ class BookingProvider with ChangeNotifier {
         'updatedAt': now,
         'refundAmount': refundAmount,
         'refundAccountName': refundAccountName,
+        'refundAccountNumber': refundAccountNumber,
         'rejectionReason': rejectionReason,
       });
 
@@ -249,6 +252,7 @@ class BookingProvider with ChangeNotifier {
     required String bookingId,
     required String refundAmount,
     required String refundAccountName,
+    required String refundAccountNumber,
     required String refundReason,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -289,6 +293,7 @@ class BookingProvider with ChangeNotifier {
               'approvedAt': now,
               'refundAmount': refundAmount,
               'refundAccountName': refundAccountName,
+              'refundAccountNumber': refundAccountNumber,
               'refundReason': refundReason,
               'updatedAt': now,
             });
@@ -298,6 +303,7 @@ class BookingProvider with ChangeNotifier {
           'approvedAt': now,
           'refundAmount': refundAmount,
           'refundAccountName': refundAccountName,
+          'refundAccountNumber': refundAccountNumber,
           'refundReason': refundReason,
           'updatedAt': now,
         });
@@ -310,6 +316,7 @@ class BookingProvider with ChangeNotifier {
         'refundApprovedAt': now,
         'refundAmount': refundAmount,
         'refundAccountName': refundAccountName,
+        'refundAccountNumber': refundAccountNumber,
         'refundReason': refundReason,
         'updatedAt': now,
       });

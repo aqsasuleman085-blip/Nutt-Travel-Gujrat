@@ -663,6 +663,23 @@ class BookingService {
       throw Exception('Please select at least one seat to add');
     }
 
+    // Determine the reservation's ROOT booking (originalBooking itself if
+    // it has no link, or whatever it's linked to) and refuse to add more
+    // seats unless the root is still pending. This mirrors the check the
+    // UI already does (ticket_details_dialog.dart), but is enforced here
+    // too as a safety net in case the admin approves/rejects the root in
+    // the moment between the dialog opening and the user hitting confirm.
+    final rootId = originalBooking.linkedBookingId.isNotEmpty
+        ? originalBooking.linkedBookingId
+        : originalBooking.id;
+    final rootBooking = await getBookingById(rootId);
+    if (rootBooking == null || rootBooking.status != 'pending') {
+      throw Exception(
+        'This booking has already been reviewed by the admin - you can no '
+        'longer add seats to it. Please make a new booking instead.',
+      );
+    }
+
     final now = DateTime.now().millisecondsSinceEpoch;
     final dateKey = _dateKey(originalBooking.travelDate);
     final basePath = 'seat_data/${originalBooking.busId}/$dateKey';

@@ -4,6 +4,7 @@ import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/widgets/booking_card.dart';
 import 'package:nutt/admin_side/widgets/loading_widget.dart';
 import 'package:nutt/services/notification_service.dart';
+import 'package:nutt/shared/validators.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/booking_model.dart';
@@ -95,11 +96,16 @@ class _BookingScreenState extends State<BookingScreen>
     }
   }
 
-  Future<Map<String, String>?> _showRejectDialog(BookingModel booking) async {
+  Future<Map<String, String>?> _showRejectDialog(
+    _MergedBookingEntry entry,
+  ) async {
+    final booking = entry.primary;
+    final formKey = GlobalKey<FormState>();
     final refundAmountController = TextEditingController(
-      text: booking.totalAmount.toStringAsFixed(0),
+      text: entry.combinedTotalAmount.toStringAsFixed(0),
     );
-    final refundAccountController = TextEditingController();
+    final refundAccountNameController = TextEditingController();
+    final refundAccountNumberController = TextEditingController();
     final reasonController = TextEditingController();
 
     return showDialog<Map<String, String>>(
@@ -108,36 +114,69 @@ class _BookingScreenState extends State<BookingScreen>
         return AlertDialog(
           title: const Text('Reject Booking'),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: refundAmountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Refund Amount',
-                    border: OutlineInputBorder(),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Seat(s): ${entry.combinedSeatLabel}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: refundAccountController,
-                  decoration: const InputDecoration(
-                    labelText: 'Refund Account Name',
-                    hintText: 'JazzCash / Easypaisa / Bank Account',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: refundAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Refund Amount',
+                      helperText: 'Combined total for all seats in this booking',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Reason For Rejection',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: refundAccountNameController,
+                    inputFormatters: [NameOnlyInputFormatter()],
+                    decoration: const InputDecoration(
+                      labelText: 'Refund Account Name',
+                      hintText: 'JazzCash / Easypaisa / Bank Account',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        validateNameOnly(v, fieldLabel: 'Refund account name'),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: refundAccountNumberController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Refund Account Number',
+                      hintText: '03XXXXXXXXX',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: validatePakistaniPhone,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: reasonController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Reason For Rejection',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -148,17 +187,12 @@ class _BookingScreenState extends State<BookingScreen>
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () {
-                if (refundAmountController.text.trim().isEmpty ||
-                    refundAccountController.text.trim().isEmpty ||
-                    reasonController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('All fields are required')),
-                  );
-                  return;
-                }
+                if (!formKey.currentState!.validate()) return;
                 Navigator.pop(dialogContext, {
                   'refundAmount': refundAmountController.text.trim(),
-                  'refundAccountName': refundAccountController.text.trim(),
+                  'refundAccountName': refundAccountNameController.text.trim(),
+                  'refundAccountNumber':
+                      refundAccountNumberController.text.trim(),
                   'rejectionReason': reasonController.text.trim(),
                 });
               },
@@ -173,11 +207,16 @@ class _BookingScreenState extends State<BookingScreen>
     );
   }
 
-  Future<Map<String, String>?> _showRefundDialog(BookingModel booking) async {
+  Future<Map<String, String>?> _showRefundDialog(
+    _MergedBookingEntry entry,
+  ) async {
+    final booking = entry.primary;
+    final formKey = GlobalKey<FormState>();
     final refundAmountController = TextEditingController(
-      text: booking.totalAmount.toStringAsFixed(0),
+      text: entry.combinedTotalAmount.toStringAsFixed(0),
     );
-    final refundAccountController = TextEditingController();
+    final refundAccountNameController = TextEditingController();
+    final refundAccountNumberController = TextEditingController();
     final reasonController = TextEditingController();
 
     return showDialog<Map<String, String>>(
@@ -186,42 +225,64 @@ class _BookingScreenState extends State<BookingScreen>
         return AlertDialog(
           title: const Text('Process Refund'),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Booking: ${booking.userName} - Seat ${booking.seatNumber}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: refundAmountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Refund Amount',
-                    border: OutlineInputBorder(),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Booking: ${booking.userName} - Seat(s) ${entry.combinedSeatLabel}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: refundAccountController,
-                  decoration: const InputDecoration(
-                    labelText: 'Refund Account Name',
-                    hintText: 'JazzCash / Easypaisa / Bank Account',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: refundAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Refund Amount',
+                      helperText: 'Combined total for all seats in this booking',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Reason (Optional)',
-                    hintText: 'Enter reason for refund',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: refundAccountNameController,
+                    inputFormatters: [NameOnlyInputFormatter()],
+                    decoration: const InputDecoration(
+                      labelText: 'Refund Account Name',
+                      hintText: 'JazzCash / Easypaisa / Bank Account',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        validateNameOnly(v, fieldLabel: 'Refund account name'),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: refundAccountNumberController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Refund Account Number',
+                      hintText: '03XXXXXXXXX',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: validatePakistaniPhone,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: reasonController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Reason (Optional)',
+                      hintText: 'Enter reason for refund',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -232,20 +293,12 @@ class _BookingScreenState extends State<BookingScreen>
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
               onPressed: () {
-                if (refundAmountController.text.trim().isEmpty ||
-                    refundAccountController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Refund Amount and Account Name are required',
-                      ),
-                    ),
-                  );
-                  return;
-                }
+                if (!formKey.currentState!.validate()) return;
                 Navigator.pop(dialogContext, {
                   'refundAmount': refundAmountController.text.trim(),
-                  'refundAccountName': refundAccountController.text.trim(),
+                  'refundAccountName': refundAccountNameController.text.trim(),
+                  'refundAccountNumber':
+                      refundAccountNumberController.text.trim(),
                   'refundReason': reasonController.text.trim(),
                 });
               },
@@ -552,7 +605,7 @@ class _BookingScreenState extends State<BookingScreen>
               combinedSeatLabel: entry.combinedSeatLabel,
               combinedTotalAmount: entry.combinedTotalAmount,
               extraSeatsCount: entry.extras.length,
-              onTap: () => _showDetails(booking),
+              onTap: () => _showDetails(entry),
 
               // Approve button (only for pending)
               onApprove: status == 'pending'
@@ -584,7 +637,7 @@ class _BookingScreenState extends State<BookingScreen>
               // Reject button (only for pending)
               onReject: status == 'pending'
                   ? () async {
-                      final rejectData = await _showRejectDialog(booking);
+                      final rejectData = await _showRejectDialog(entry);
                       if (rejectData == null) return;
                       await _handleAction(
                         bookingId: booking.id,
@@ -594,6 +647,8 @@ class _BookingScreenState extends State<BookingScreen>
                               refundAmount: rejectData['refundAmount']!,
                               refundAccountName:
                                   rejectData['refundAccountName']!,
+                              refundAccountNumber:
+                                  rejectData['refundAccountNumber']!,
                               rejectionReason: rejectData['rejectionReason']!,
                             ),
                         successMessage: 'Booking Rejected ✗',
@@ -602,7 +657,7 @@ class _BookingScreenState extends State<BookingScreen>
                         uid: booking.userId,
                         title: "Ticket Rejected",
                         message:
-                            "Your ticket for seat #${booking.seatNumber} from ${booking.busFrom} to ${booking.busTo} was rejected.\nRefund: Rs ${rejectData['refundAmount']}\nAccount: ${rejectData['refundAccountName']}\nReason: ${rejectData['rejectionReason']}",
+                            "Your ticket for seat(s) ${entry.combinedSeatLabel} from ${booking.busFrom} to ${booking.busTo} was rejected.\nRefund: Rs ${rejectData['refundAmount']}\nAccount: ${rejectData['refundAccountName']} (${rejectData['refundAccountNumber']})\nReason: ${rejectData['rejectionReason']}",
                       );
                     }
                   : null,
@@ -610,7 +665,7 @@ class _BookingScreenState extends State<BookingScreen>
               // Refund button (only for refund_pending)
               onRefund: status == 'refund_pending'
                   ? () async {
-                      final refundData = await _showRefundDialog(booking);
+                      final refundData = await _showRefundDialog(entry);
                       if (refundData == null) return;
                       await _handleAction(
                         bookingId: booking.id,
@@ -620,6 +675,8 @@ class _BookingScreenState extends State<BookingScreen>
                               refundAmount: refundData['refundAmount']!,
                               refundAccountName:
                                   refundData['refundAccountName']!,
+                              refundAccountNumber:
+                                  refundData['refundAccountNumber']!,
                               refundReason: refundData['refundReason'] ?? '',
                             ),
                         successMessage: 'Refund Processed ✓',
@@ -628,7 +685,7 @@ class _BookingScreenState extends State<BookingScreen>
                         uid: booking.userId,
                         title: "Refund Processed",
                         message:
-                            "Your refund for seat #${booking.seatNumber} from ${booking.busFrom} to ${booking.busTo} has been processed. Amount: Rs ${refundData['refundAmount']} will be sent to ${refundData['refundAccountName']}.",
+                            "Your refund for seat(s) ${entry.combinedSeatLabel} from ${booking.busFrom} to ${booking.busTo} has been processed. Amount: Rs ${refundData['refundAmount']} will be sent to ${refundData['refundAccountName']} (${refundData['refundAccountNumber']}).",
                       );
                     }
                   : null,
@@ -646,8 +703,10 @@ class _BookingScreenState extends State<BookingScreen>
     );
   }
 
-  void _showDetails(BookingModel booking) {
+  void _showDetails(_MergedBookingEntry entry) {
     if (!mounted) return;
+    final booking = entry.primary;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -659,12 +718,39 @@ class _BookingScreenState extends State<BookingScreen>
               _row("Passenger", booking.userName),
               _row("Phone", booking.phone),
               _row("CNIC", booking.cnic),
-              _row("Seat", booking.seatNumber),
+              _row("Seat(s)", entry.combinedSeatLabel),
               _row("Route", "${booking.busFrom} → ${booking.busTo}"),
               _row("Date", booking.travelDate),
               _row("Sender Name", booking.senderName),
               _row("Sender Number", booking.senderNumber),
-              _row("Amount", "Rs ${booking.totalAmount}"),
+              _row(
+                "Total Amount",
+                "Rs ${entry.combinedTotalAmount.toStringAsFixed(0)}",
+              ),
+              // Show the per-booking breakdown whenever extra seats were
+              // added, so the admin can see exactly how the combined
+              // total was made up (original booking + each addon).
+              if (entry.extras.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                const Text(
+                  "BREAKDOWN",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                _row(
+                  "Original - Seat ${booking.seatNumber}",
+                  "Rs ${booking.totalAmount.toStringAsFixed(0)}",
+                ),
+                for (final addon in entry.extras)
+                  _row(
+                    "Added - Seat ${addon.seatNumber}",
+                    "Rs ${addon.totalAmount.toStringAsFixed(0)}",
+                  ),
+              ],
               _row("Status", booking.status.toUpperCase()),
               if (booking.refundAmount.isNotEmpty)
                 _row("Refund Amount", "Rs ${booking.refundAmount}"),

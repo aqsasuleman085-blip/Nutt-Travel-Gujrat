@@ -90,13 +90,29 @@ class _AddExtraSeatsDialogState extends State<AddExtraSeatsDialog> {
             }
           });
         }
+        // Seats other users have booked but are still awaiting admin
+        // approval also count as taken - otherwise two people could pick
+        // the same seat during the approval window.
+        final pending = data['pending'];
+        if (pending is Map) {
+          takenSeats.addAll(pending.keys.map((k) => k.toString()));
+        }
+      }
+
+      final related = await _bookingService.getRelatedBookings(booking);
+
+      // Exclude every seat this SAME reservation already has - the root
+      // booking's own seat plus every addon's seat(s) - so the user can't
+      // accidentally pick a seat they've already booked for themselves.
+      for (final b in related) {
+        for (final s in b.seatNumber.split(',')) {
+          takenSeats.add(s.trim());
+        }
       }
 
       final seats = List.generate(totalSeats, (i) => (i + 1).toString())
           .where((s) => !takenSeats.contains(s))
           .toList();
-
-      final related = await _bookingService.getRelatedBookings(booking);
 
       if (mounted) {
         setState(() {
