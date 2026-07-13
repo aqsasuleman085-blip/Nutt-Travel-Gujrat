@@ -27,6 +27,14 @@ const List<String> kRefundReasons = [
 class RefundRequestForm extends StatefulWidget {
   final BookingModel booking;
   final Color themeColor;
+
+  /// When this refund covers a reservation with addon seats (added via
+  /// "Add More Seats"), these carry the combined seat label / total
+  /// amount for the whole reservation. If not provided, falls back to
+  /// the booking's own seatNumber/price.
+  final String? combinedSeatLabel;
+  final double? combinedTotalAmount;
+
   final Future<void> Function(
     String accountName,
     String accountNumber,
@@ -39,6 +47,8 @@ class RefundRequestForm extends StatefulWidget {
     required this.booking,
     required this.themeColor,
     required this.onSubmit,
+    this.combinedSeatLabel,
+    this.combinedTotalAmount,
   });
 
   @override
@@ -157,7 +167,8 @@ class _RefundRequestFormState extends State<RefundRequestForm> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Seat ${booking.seatNumber} • Rs ${booking.price.toStringAsFixed(0)}',
+                  'Seat ${widget.combinedSeatLabel ?? booking.seatNumber} • '
+                  'Rs ${(widget.combinedTotalAmount ?? booking.price).toStringAsFixed(0)}',
                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 20),

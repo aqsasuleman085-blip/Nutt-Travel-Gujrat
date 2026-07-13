@@ -99,54 +99,81 @@ class BookingProvider with ChangeNotifier {
 
       final booking = BookingModel.fromMap({'id': doc.id, ...doc.data()!});
 
-      final dateKey = _dateKey(
-        booking.travelDate.isNotEmpty
-            ? booking.travelDate
-            : booking.bookingDate.toIso8601String(),
-      );
-
       if (booking.status == 'approved') {
         throw Exception('Already approved');
       }
 
-      await _firestore.collection('bookings').doc(bookingId).update({
-        'status': 'approved',
-        'updatedAt': now,
-      });
+      // Find every "extra seats" booking linked to this one, so approving
+      // the root also approves the whole reservation in one action -
+      // otherwise addons would be stuck at 'pending' forever and the
+      // admin UI would show the reservation as split across two tabs.
+      final addonsSnapshot = await _firestore
+          .collection('bookings')
+          .where('linkedBookingId', isEqualTo: bookingId)
+          .get();
+      final addons = addonsSnapshot.docs
+          .map((d) => BookingModel.fromMap({'id': d.id, ...d.data()}))
+          .toList();
 
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/booked/${booking.seatNumber}',
-          )
-          .set({"bookedBy": booking.userId, "bookedAt": now});
+      final allBookings = [booking, ...addons];
 
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/locks/${booking.seatNumber}',
-          )
-          .remove();
+      // Update Firestore for the root + every addon in one atomic batch.
+      final batch = _firestore.batch();
+      for (final b in allBookings) {
+        batch.update(_firestore.collection('bookings').doc(b.id), {
+          'status': 'approved',
+          'updatedAt': now,
+        });
+      }
+      await batch.commit();
 
-      // Clear the "pending approval" marker now that the seat is booked.
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/pending/${booking.seatNumber}',
-          )
-          .remove();
+      // Update Realtime Database seat maps / status mirrors for each one.
+      for (final b in allBookings) {
+        final dateKey = _dateKey(
+          b.travelDate.isNotEmpty
+              ? b.travelDate
+              : b.bookingDate.toIso8601String(),
+        );
 
-      await _realtimeDb.ref('booking_status/$bookingId').set({
-        'status': 'approved',
-        'updatedAt': now,
-      });
+        for (final seat in b.seatNumber.split(',')) {
+          final trimmedSeat = seat.trim();
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/booked/$trimmedSeat')
+              .set({"bookedBy": b.userId, "bookedAt": now});
 
-      await _realtimeDb.ref('booking_requests/$bookingId').update({
-        'status': 'approved',
-        'updatedAt': now,
-      });
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/locks/$trimmedSeat')
+              .remove();
+
+          // Clear the "pending approval" marker now that the seat is booked.
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/pending/$trimmedSeat')
+              .remove();
+        }
+
+        await _realtimeDb.ref('booking_status/${b.id}').set({
+          'status': 'approved',
+          'updatedAt': now,
+        });
+
+        await _realtimeDb.ref('booking_requests/${b.id}').update({
+          'status': 'approved',
+          'updatedAt': now,
+        });
+      }
+
+      // One combined notification to the user, mentioning every seat
+      // across the root + all addons, instead of a separate notification
+      // per booking document.
+      final allSeats = allBookings
+          .expand((b) => b.seatNumber.split(','))
+          .map((s) => s.trim())
+          .join(', ');
 
       await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({
         'title': 'Booking Approved',
         'message':
-            'Seat ${booking.seatNumber} for ${booking.busFrom} → ${booking.busTo} confirmed',
+            'Seat(s) $allSeats for ${booking.busFrom} → ${booking.busTo} confirmed',
         'type': 'booking',
         'isRead': false,
         'createdAt': now,
@@ -176,67 +203,92 @@ class BookingProvider with ChangeNotifier {
 
       final booking = BookingModel.fromMap({'id': doc.id, ...doc.data()!});
 
-      final dateKey = _dateKey(
-        booking.travelDate.isNotEmpty
-            ? booking.travelDate
-            : booking.bookingDate.toIso8601String(),
-      );
-
       if (booking.status == 'rejected') {
         throw Exception('Already rejected');
       }
 
-      await _firestore.collection('bookings').doc(bookingId).update({
-        'status': 'rejected',
-        'updatedAt': now,
-        'rejectedAt': now,
-        'refundAmount': refundAmount,
-        'refundAccountName': refundAccountName,
-        'refundAccountNumber': refundAccountNumber,
-        'rejectionReason': rejectionReason,
-      });
+      // Find every "extra seats" booking linked to this one, so rejecting
+      // the root also rejects the whole reservation - otherwise addons
+      // would be stuck at 'pending' forever, and the seats they hold
+      // would never be freed.
+      final addonsSnapshot = await _firestore
+          .collection('bookings')
+          .where('linkedBookingId', isEqualTo: bookingId)
+          .get();
+      final addons = addonsSnapshot.docs
+          .map((d) => BookingModel.fromMap({'id': d.id, ...d.data()}))
+          .toList();
 
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/locks/${booking.seatNumber}',
-          )
-          .remove();
+      final allBookings = [booking, ...addons];
 
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/booked/${booking.seatNumber}',
-          )
-          .remove();
+      // Update Firestore for the root + every addon in one atomic batch.
+      // The same combined refund amount/account is recorded on every
+      // booking in the reservation, per how refunds are tracked here.
+      final batch = _firestore.batch();
+      for (final b in allBookings) {
+        batch.update(_firestore.collection('bookings').doc(b.id), {
+          'status': 'rejected',
+          'updatedAt': now,
+          'rejectedAt': now,
+          'refundAmount': refundAmount,
+          'refundAccountName': refundAccountName,
+          'refundAccountNumber': refundAccountNumber,
+          'rejectionReason': rejectionReason,
+        });
+      }
+      await batch.commit();
 
-      // Clear the "pending approval" marker so the seat becomes available
-      // again for other users.
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/pending/${booking.seatNumber}',
-          )
-          .remove();
+      for (final b in allBookings) {
+        final dateKey = _dateKey(
+          b.travelDate.isNotEmpty
+              ? b.travelDate
+              : b.bookingDate.toIso8601String(),
+        );
 
-      await _realtimeDb.ref('booking_status/$bookingId').set({
-        'status': 'rejected',
-        'updatedAt': now,
-        'refundAmount': refundAmount,
-        'refundAccountName': refundAccountName,
-        'refundAccountNumber': refundAccountNumber,
-        'rejectionReason': rejectionReason,
-      });
+        for (final seat in b.seatNumber.split(',')) {
+          final trimmedSeat = seat.trim();
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/locks/$trimmedSeat')
+              .remove();
 
-      await _realtimeDb.ref('booking_requests/$bookingId').update({
-        'status': 'rejected',
-        'updatedAt': now,
-        'refundAmount': refundAmount,
-        'refundAccountName': refundAccountName,
-        'rejectionReason': rejectionReason,
-      });
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/booked/$trimmedSeat')
+              .remove();
+
+          // Clear the "pending approval" marker so the seat becomes
+          // available again for other users.
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/pending/$trimmedSeat')
+              .remove();
+        }
+
+        await _realtimeDb.ref('booking_status/${b.id}').set({
+          'status': 'rejected',
+          'updatedAt': now,
+          'refundAmount': refundAmount,
+          'refundAccountName': refundAccountName,
+          'refundAccountNumber': refundAccountNumber,
+          'rejectionReason': rejectionReason,
+        });
+
+        await _realtimeDb.ref('booking_requests/${b.id}').update({
+          'status': 'rejected',
+          'updatedAt': now,
+          'refundAmount': refundAmount,
+          'refundAccountName': refundAccountName,
+          'rejectionReason': rejectionReason,
+        });
+      }
+
+      final allSeats = allBookings
+          .expand((b) => b.seatNumber.split(','))
+          .map((s) => s.trim())
+          .join(', ');
 
       await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({
         'title': 'Booking Rejected',
         'message':
-            'Your ticket for seat ${booking.seatNumber} from ${booking.busFrom} → ${booking.busTo} was rejected.\nRefund: Rs $refundAmount\nAccount: $refundAccountName\nReason: $rejectionReason',
+            'Your ticket for seat(s) $allSeats from ${booking.busFrom} → ${booking.busTo} was rejected.\nRefund: Rs $refundAmount\nAccount: $refundAccountName ($refundAccountNumber)\nReason: $rejectionReason',
         'type': 'booking',
         'isRead': false,
         'createdAt': now,
@@ -270,21 +322,24 @@ class BookingProvider with ChangeNotifier {
         throw Exception('Booking is not in refund pending state');
       }
 
-      final dateKey = _dateKey(
-        booking.travelDate.isNotEmpty
-            ? booking.travelDate
-            : booking.bookingDate.toIso8601String(),
-      );
-
-      // Update refund request status
+      // Update refund request status, and read back linkedBookingIds so
+      // every addon covered by this same refund request also gets marked
+      // refunded - the request was submitted once for the whole
+      // reservation (see BookingService.processRefund on the user side).
       final refundQuery = await _firestore
           .collection('refund_requests')
           .where('bookingId', isEqualTo: bookingId)
           .limit(1)
           .get();
 
+      List<String> addonIds = [];
+
       if (refundQuery.docs.isNotEmpty) {
         final refundDoc = refundQuery.docs.first;
+        addonIds = List<String>.from(
+          refundDoc.data()['linkedBookingIds'] ?? [],
+        );
+
         await _firestore
             .collection('refund_requests')
             .doc(refundDoc.id)
@@ -307,46 +362,85 @@ class BookingProvider with ChangeNotifier {
           'refundReason': refundReason,
           'updatedAt': now,
         });
+      } else {
+        // Fallback: no refund_requests doc found with linkedBookingIds
+        // (e.g. an older refund created before this field existed) - fall
+        // back to looking up addons directly via linkedBookingId, same as
+        // approve/reject already do, so this booking's addons still get
+        // refunded together with it.
+        final addonsSnapshot = await _firestore
+            .collection('bookings')
+            .where('linkedBookingId', isEqualTo: bookingId)
+            .get();
+        addonIds = addonsSnapshot.docs.map((d) => d.id).toList();
       }
 
-      // Update booking status to refunded
-      await _firestore.collection('bookings').doc(bookingId).update({
-        'status': 'refunded',
-        'refundStatus': 'refunded',
-        'refundApprovedAt': now,
-        'refundAmount': refundAmount,
-        'refundAccountName': refundAccountName,
-        'refundAccountNumber': refundAccountNumber,
-        'refundReason': refundReason,
-        'updatedAt': now,
-      });
+      final allBookingIds = [bookingId, ...addonIds];
 
-      // Sync to Realtime Database
-      await _realtimeDb.ref('booking_status/$bookingId').set({
-        'status': 'refunded',
-        'refundStatus': 'refunded',
-        'refundApprovedAt': now,
-        'refundAmount': refundAmount,
-        'refundAccountName': refundAccountName,
-        'refundReason': refundReason,
-        'updatedAt': now,
-      });
+      // Fetch full booking models for every id so we know each one's own
+      // seat/bus/date for the Realtime Database seat-freeing step below.
+      final allBookings = <BookingModel>[booking];
+      for (final id in addonIds) {
+        final addonDoc = await _firestore.collection('bookings').doc(id).get();
+        if (addonDoc.exists) {
+          allBookings.add(
+            BookingModel.fromMap({'id': addonDoc.id, ...addonDoc.data()!}),
+          );
+        }
+      }
 
-      // ✅ Free the seat now that the refund is complete - previously this
-      // was never done, so a refunded booking's seat stayed permanently
-      // marked as booked (grey) in the seat map even though nobody could
-      // actually use that ticket anymore.
-      await _realtimeDb
-          .ref(
-            'seat_data/${booking.busId}/$dateKey/booked/${booking.seatNumber}',
-          )
-          .remove();
+      // Update booking status to refunded for the root + every addon.
+      final batch = _firestore.batch();
+      for (final id in allBookingIds) {
+        batch.update(_firestore.collection('bookings').doc(id), {
+          'status': 'refunded',
+          'refundStatus': 'refunded',
+          'refundApprovedAt': now,
+          'refundAmount': refundAmount,
+          'refundAccountName': refundAccountName,
+          'refundAccountNumber': refundAccountNumber,
+          'refundReason': refundReason,
+          'updatedAt': now,
+        });
+      }
+      await batch.commit();
+
+      for (final b in allBookings) {
+        final dateKey = _dateKey(
+          b.travelDate.isNotEmpty
+              ? b.travelDate
+              : b.bookingDate.toIso8601String(),
+        );
+
+        // Sync to Realtime Database
+        await _realtimeDb.ref('booking_status/${b.id}').set({
+          'status': 'refunded',
+          'refundStatus': 'refunded',
+          'refundApprovedAt': now,
+          'refundAmount': refundAmount,
+          'refundAccountName': refundAccountName,
+          'refundReason': refundReason,
+          'updatedAt': now,
+        });
+
+        // ✅ Free the seat(s) now that the refund is complete.
+        for (final seat in b.seatNumber.split(',')) {
+          await _realtimeDb
+              .ref('seat_data/${b.busId}/$dateKey/booked/${seat.trim()}')
+              .remove();
+        }
+      }
+
+      final allSeats = allBookings
+          .expand((b) => b.seatNumber.split(','))
+          .map((s) => s.trim())
+          .join(', ');
 
       // Send notification to user
       await _realtimeDb.ref('user_notifications/${booking.userId}').push().set({
         'title': 'Refund Processed',
         'message':
-            'Your refund for seat ${booking.seatNumber} (${booking.busFrom} → ${booking.busTo}) has been processed.\nAmount: Rs $refundAmount\nAccount: $refundAccountName\nReason: ${refundReason.isNotEmpty ? refundReason : 'N/A'}',
+            'Your refund for seat(s) $allSeats (${booking.busFrom} → ${booking.busTo}) has been processed.\nAmount: Rs $refundAmount\nAccount: $refundAccountName ($refundAccountNumber)\nReason: ${refundReason.isNotEmpty ? refundReason : 'N/A'}',
         'type': 'refund',
         'isRead': false,
         'createdAt': now,
@@ -356,7 +450,7 @@ class BookingProvider with ChangeNotifier {
       await _realtimeDb.ref('admin_notifications').push().set({
         'title': 'Refund Completed',
         'message':
-            'Refund processed for ${booking.userName} - Seat ${booking.seatNumber}',
+            'Refund processed for ${booking.userName} - Seat(s) $allSeats',
         'type': 'refund_completed',
         'bookingId': bookingId,
         'isRead': false,

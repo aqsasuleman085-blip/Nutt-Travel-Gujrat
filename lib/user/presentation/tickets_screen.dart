@@ -77,17 +77,20 @@ class _TicketsScreenState extends State<TicketsScreen> {
   /// (read-only, auto-filled from the booking), account details (auto-filled
   /// but editable), a refund reason dropdown, and a terms & conditions
   /// checkbox. On submit it calls _processRefund with all the extra details.
-  Future<void> _openRefundRequestForm(BookingModel booking) async {
+  Future<void> _openRefundRequestForm(_MergedTicketEntry entry) async {
+    final booking = entry.primary;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => RefundRequestForm(
         booking: booking,
+        combinedSeatLabel: entry.combinedSeatLabel,
+        combinedTotalAmount: entry.combinedTotalAmount,
         themeColor: themeColor,
         onSubmit: (accountName, accountNumber, reason) =>
             _processRefund(
-              booking,
+              entry,
               refundAccountName: accountName,
               refundAccountNumber: accountNumber,
               refundReason: reason,
@@ -98,13 +101,18 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   /// Process refund - Always sets status to refund_pending.
   /// Now also carries passenger name + account details + refund reason,
-  /// all collected from the Refund Request Form.
+  /// all collected from the Refund Request Form. Uses the COMBINED
+  /// amount/seat label for the whole reservation (root + any addons),
+  /// since BookingService.processRefund cascades the refund_pending
+  /// status to every linked addon booking automatically.
   Future<void> _processRefund(
-    BookingModel booking, {
+    _MergedTicketEntry entry, {
     required String refundAccountName,
     required String refundAccountNumber,
     required String refundReason,
   }) async {
+    final booking = entry.primary;
+
     // Set processing state for this booking
     setState(() {
       _processingBookingId = booking.id;
@@ -115,8 +123,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
       await _bookingService.processRefund(
         bookingId: booking.id,
         userId: booking.userId,
-        amount: booking.price,
-        seatNumber: booking.seatNumber,
+        amount: entry.combinedTotalAmount,
+        seatNumber: entry.combinedSeatLabel,
         route: '${booking.busFrom} → ${booking.busTo}',
         paymentMethod: booking.paymentMethod,
         passengerName: booking.userName,
@@ -660,7 +668,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             vertical: 8,
                           ),
                         ),
-                        onPressed: () => _openRefundRequestForm(booking),
+                        onPressed: () => _openRefundRequestForm(entry),
                         child: const Text("Request Refund"),
                       ),
                     if (showRefundButton) const SizedBox(width: 8),

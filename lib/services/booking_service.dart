@@ -34,14 +34,29 @@ class BookingService {
     final isCashPayment = paymentMethod.toLowerCase().contains('cash');
 
     try {
+      // Find every "extra seats" booking linked to this one, so
+      // requesting a refund on the root also requests a refund for the
+      // whole reservation - otherwise addons would be left behind at
+      // whatever status they were at, split apart from the root.
+      final addonsSnapshot = await _firestore
+          .collection('bookings')
+          .where('linkedBookingId', isEqualTo: bookingId)
+          .get();
+      final addonIds = addonsSnapshot.docs.map((d) => d.id).toList();
+      final allBookingIds = [bookingId, ...addonIds];
+
       // Start a Firestore batch for atomic operations
       final batch = _firestore.batch();
 
-      // 1. Create refund request document (for audit trail)
+      // Create ONE refund request document covering the whole reservation
+      // (root + every addon), with the combined amount and combined seat
+      // label, mirroring how the admin side already displays/handles
+      // combined reservations.
       final refundRef = _firestore.collection('refund_requests').doc();
       batch.set(refundRef, {
         'refundId': refundRef.id,
         'bookingId': bookingId,
+        'linkedBookingIds': addonIds,
         'userId': userId,
         'userEmail': user.email ?? '',
         'passengerName': passengerName,
@@ -59,34 +74,41 @@ class BookingService {
         'updatedAt': now,
       });
 
-      // 2. Update booking status in Firestore to 'refund_pending'
-      final bookingRef = _firestore.collection('bookings').doc(bookingId);
-      batch.update(bookingRef, {
-        'status': 'refund_pending',
-        'refundStatus': 'refund_pending',
-        'refundRequestedAt': now,
-        'refundAmount': amount,
-        'refundAccountName': refundAccountName,
-        'refundAccountNumber': refundAccountNumber,
-        'refundReason': refundReason,
-        'paymentMethod': paymentMethod,
-        'updatedAt': now,
-      });
+      // Update every booking in the reservation (root + addons) to
+      // 'refund_pending', carrying the same combined amount/account/reason
+      // on each one - matching how reject/approve cascades work.
+      for (final id in allBookingIds) {
+        final bookingRef = _firestore.collection('bookings').doc(id);
+        batch.update(bookingRef, {
+          'status': 'refund_pending',
+          'refundStatus': 'refund_pending',
+          'refundRequestedAt': now,
+          'refundAmount': amount,
+          'refundAccountName': refundAccountName,
+          'refundAccountNumber': refundAccountNumber,
+          'refundReason': refundReason,
+          'paymentMethod': paymentMethod,
+          'updatedAt': now,
+        });
+      }
 
       // Commit batch operation
       await batch.commit();
 
-      // 3. Sync to Realtime Database (for admin panel)
-      await _realtimeDb.ref('booking_status/$bookingId').set({
-        'status': 'refund_pending',
-        'refundStatus': 'refund_pending',
-        'updatedAt': now,
-      });
+      // Sync to Realtime Database (for admin panel)
+      for (final id in allBookingIds) {
+        await _realtimeDb.ref('booking_status/$id').set({
+          'status': 'refund_pending',
+          'refundStatus': 'refund_pending',
+          'updatedAt': now,
+        });
+      }
 
-      // 4. Sync refund request to Realtime Database
+      // Sync refund request to Realtime Database
       await _realtimeDb.ref('refund_requests/${refundRef.id}').set({
         'refundId': refundRef.id,
         'bookingId': bookingId,
+        'linkedBookingIds': addonIds,
         'userId': userId,
         'userEmail': user.email ?? '',
         'passengerName': passengerName,
@@ -104,7 +126,7 @@ class BookingService {
         'updatedAt': now,
       });
 
-      // 5. Create admin notification for all refund requests
+      // Create admin notification for all refund requests
       await _realtimeDb.ref('admin_notifications').push().set({
         'title': 'New Refund Request',
         'message': 'Refund requested by $passengerName for seat $seatNumber ($route) - '
