@@ -30,6 +30,13 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
   // reservation (root + every addon) is locked, even if a specific addon
   // booking's own status still happens to say 'pending'.
   bool _rootIsPending = false;
+
+  // Whether the root has ALREADY used its one and only "Add More Seats"
+  // chance. Once true, it stays true forever for this reservation - the
+  // option is permanently gone, even if that addon later gets
+  // rejected/refunded.
+  bool _rootHasUsedAddSeats = false;
+
   bool _loadingRootStatus = true;
 
   BookingModel get booking => widget.booking;
@@ -45,6 +52,7 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
       // This booking IS the root.
       setState(() {
         _rootIsPending = booking.status == 'pending';
+        _rootHasUsedAddSeats = booking.hasUsedAddSeats;
         _loadingRootStatus = false;
       });
       return;
@@ -57,6 +65,7 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
       if (mounted) {
         setState(() {
           _rootIsPending = root?.status == 'pending';
+          _rootHasUsedAddSeats = root?.hasUsedAddSeats ?? true;
           _loadingRootStatus = false;
         });
       }
@@ -67,6 +76,7 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
       if (mounted) {
         setState(() {
           _rootIsPending = false;
+          _rootHasUsedAddSeats = true;
           _loadingRootStatus = false;
         });
       }
@@ -75,13 +85,15 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
 
   bool get _canEdit => booking.status == 'pending';
 
-  // Adding more seats requires BOTH: this specific booking still being
-  // pending, AND the reservation's root booking still being pending (see
-  // _loadRootStatus above). Also blocked if this booking is itself an
-  // addon that has its own addons (kept one level deep).
+  // Adding more seats requires ALL of: this specific booking still being
+  // pending, the reservation's root booking still being pending (see
+  // _loadRootStatus above), the root NOT having already used its one
+  // add-seats chance, and this booking not itself being an addon (kept
+  // one level deep).
   bool get _canAddSeats =>
       !_loadingRootStatus &&
       _rootIsPending &&
+      !_rootHasUsedAddSeats &&
       booking.status == 'pending' &&
       booking.linkedBookingId.isEmpty;
 
@@ -159,6 +171,34 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (!_loadingRootStatus &&
+                booking.linkedBookingId.isEmpty &&
+                booking.status == 'pending' &&
+                _rootHasUsedAddSeats) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You have already used your one chance to add more '
+                        'seats to this booking. Any further seats need a '
+                        'new booking.',
+                        style: TextStyle(fontSize: 11, color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const Text(
               'PASSENGER INFORMATION',
               style: TextStyle(

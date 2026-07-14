@@ -702,6 +702,27 @@ class BookingService {
       );
     }
 
+    // ✅ ONE-TIME USE: "Add More Seats" can only ever be used ONCE per
+    // reservation. Once the root booking has been used to create an
+    // addon, this stays permanently blocked - even if that addon later
+    // gets rejected or refunded - so a user can't keep padding the same
+    // pending booking with extra seats across multiple separate requests.
+    if (rootBooking.hasUsedAddSeats) {
+      throw Exception(
+        'You have already used your one chance to add more seats to this '
+        'booking. Please make a new booking for any additional seats.',
+      );
+    }
+
+    // ✅ MAX 5 SEATS TOTAL per reservation: 1 original seat + up to 4
+    // extra seats in this one addon request.
+    if (extraSeats.length > 4) {
+      throw Exception(
+        'You can add at most 4 extra seats (5 total including your '
+        'original seat).',
+      );
+    }
+
     final now = DateTime.now().millisecondsSinceEpoch;
     final dateKey = _dateKey(originalBooking.travelDate);
     final basePath = 'seat_data/${originalBooking.busId}/$dateKey';
@@ -768,6 +789,16 @@ class BookingService {
     };
 
     await docRef.set(bookingData);
+
+    // ✅ Permanently mark the ROOT booking as having used its one and only
+    // "Add More Seats" chance - this must be set on the ROOT (not
+    // necessarily originalBooking itself, in case this somehow runs
+    // against something already linked), so the block applies to the
+    // whole reservation going forward.
+    await _firestore.collection('bookings').doc(rootId).update({
+      'hasUsedAddSeats': true,
+      'updatedAt': now,
+    });
 
     await _realtimeDb.ref('booking_status/${docRef.id}').set({
       'status': 'pending',

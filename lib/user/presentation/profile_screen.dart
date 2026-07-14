@@ -485,27 +485,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(height: 1, color: Colors.grey),
 
                   // 🔹 DARK MODE TOGGLE
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, _) {
-                      return SwitchListTile(
-                        secondary: Icon(
-                          themeProvider.isDarkMode
-                              ? Icons.dark_mode
-                              : Icons.dark_mode_outlined,
-                          color: themeColor,
-                        ),
-                        title: const Text(
-                          "Dark Mode",
-                          style: TextStyle(fontSize: 15),
-                        ),
-                        value: themeProvider.isDarkMode,
-                        activeColor: themeColor,
-                        onChanged: (value) {
-                          themeProvider.toggleTheme(value);
-                        },
-                      );
-                    },
-                  ),
+                  // Consumer<ThemeProvider>(
+                  //   builder: (context, themeProvider, _) {
+                  //     return SwitchListTile(
+                  //       secondary: Icon(
+                  //         themeProvider.isDarkMode
+                  //             ? Icons.dark_mode
+                  //             : Icons.dark_mode_outlined,
+                  //         color: themeColor,
+                  //       ),
+                  //       title: const Text(
+                  //         "Dark Mode",
+                  //         style: TextStyle(fontSize: 15),
+                  //       ),
+                  //       value: themeProvider.isDarkMode,
+                  //       activeColor: themeColor,
+                  //       onChanged: (value) {
+                  //         themeProvider.toggleTheme(value);
+                  //       },
+                  //     );
+                  //   },
+                  // ),
 
                   const Divider(height: 1, color: Colors.grey),
 

@@ -52,6 +52,14 @@ class BookingModel {
   // two can be traced back to each other. Empty for normal bookings.
   final String linkedBookingId;
 
+  // ONE-TIME USE FLAG: set to true on the ROOT booking the moment it is
+  // used to create an "Add More Seats" addon, and never reset back to
+  // false. Once true, "Add More Seats" is permanently disabled for this
+  // reservation - even if the addon itself later gets rejected/refunded -
+  // preventing a user from repeatedly padding the same pending booking
+  // with extra seats over multiple separate requests.
+  final bool hasUsedAddSeats;
+
   BookingModel({
     required this.id,
     required this.userId,
@@ -88,6 +96,7 @@ class BookingModel {
     this.userRating = 0,
     this.userRatingComment = '',
     this.linkedBookingId = '',
+    this.hasUsedAddSeats = false,
     DateTime? bookingDate,
     DateTime? createdAt,
   }) : bookingDate = bookingDate ?? DateTime.now(),
@@ -137,6 +146,7 @@ class BookingModel {
       'userRatingComment': userRatingComment,
       // Linked booking (addon seats)
       'linkedBookingId': linkedBookingId,
+      'hasUsedAddSeats': hasUsedAddSeats,
     };
   }
 
@@ -185,6 +195,7 @@ class BookingModel {
           : 0,
       userRatingComment: map['userRatingComment'] ?? '',
       linkedBookingId: map['linkedBookingId'] ?? '',
+      hasUsedAddSeats: map['hasUsedAddSeats'] == true,
       bookingDate: _toDateTime(map['createdAt'] ?? map['bookingDate']),
       createdAt: _toDateTime(map['createdAt'], fallbackToNow: true),
     );
