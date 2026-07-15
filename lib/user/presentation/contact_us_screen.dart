@@ -19,8 +19,8 @@ class ContactUsScreen extends StatelessWidget {
 
   // Update these to your real company details.
   static const String companyName = "Nutt Travel Gujrat";
-  static const String phone = "+92 300 1234567";
-  static const String whatsApp = "+923001234567"; // no spaces, with country code
+  static const String phone = "+92 347 2734270";
+  static const String whatsApp = "+923472734270"; // no spaces, with country code
   static const String email = "info@nutttravel.com";
   static const String address =
       "Nutt Travel Bus Terminal, G.T Road, Gujrat, Punjab, Pakistan";

@@ -22,15 +22,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     uid = FirebaseAuth.instance.currentUser!.uid;
-    _markAllAsRead();
+    // ❌ REMOVED: _markAllAsRead() - Don't auto-mark as read
+    // Just set loading to false
+    _isLoading = false;
   }
 
-  Future<void> _markAllAsRead() async {
-    await _notificationService.markAllAsRead(uid);
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  // ❌ REMOVED: _markAllAsRead() method - No longer needed
 
   Future<void> _deleteNotification(String key) async {
     await _notificationService.deleteNotification(uid, key);
@@ -316,6 +313,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 },
                 child: GestureDetector(
                   onTap: () async {
+                    // ✅ Only mark as read when user taps on notification
                     if (!isRead) {
                       await _notificationService.markAsRead(
                         uid,
@@ -328,20 +326,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     // Optional: Navigate based on notification type
                     if (bookingId.isNotEmpty) {
                       // Navigate to booking details if needed
+                      // Example: Navigator.push(context, MaterialPageRoute(builder: (_) => BookingDetailsScreen(bookingId: bookingId)));
                     }
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
+                      // ✅ Keep visual distinction for unread notifications
                       color: isRead
                           ? Colors.white
-                          : themeColor.withOpacity(0.05),
+                          : themeColor.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isRead
                             ? Colors.grey.shade200
-                            : themeColor.withOpacity(0.3),
+                            : themeColor.withOpacity(0.4),
+                        width: isRead ? 1 : 2,
                       ),
                       boxShadow: const [
                         BoxShadow(
@@ -370,6 +371,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     child: Text(
                                       title,
                                       style: TextStyle(
+                                        // ✅ Bold for unread, normal for read
                                         fontWeight: isRead
                                             ? FontWeight.w500
                                             : FontWeight.bold,
@@ -380,6 +382,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       ),
                                     ),
                                   ),
+                                  // ✅ Show unread indicator dot for unread notifications
                                   if (!isRead)
                                     Container(
                                       width: 10,
@@ -438,6 +441,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       fontSize: 11,
                                     ),
                                   ),
+                                  if (!isRead) ...[
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: themeColor.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'NEW',
+                                        style: TextStyle(
+                                          color: themeColor,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],

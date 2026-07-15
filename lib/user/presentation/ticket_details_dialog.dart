@@ -4,6 +4,7 @@ import 'package:nutt/admin_side/models/booking_model.dart';
 import '../../services/booking_service.dart';
 import 'add_extra_seats_dialog.dart';
 import 'edit_passenger_dialog.dart';
+import 'ticket_pdf_service.dart';
 
 /// Read-only ticket details dialog. The edit icon (shown only when status
 /// == 'pending') opens EditPassengerDialog; the seat icon opens
@@ -22,6 +23,8 @@ class TicketDetailsDialog extends StatefulWidget {
 
 class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
   final BookingService _bookingService = BookingService();
+  final TicketPdfService _pdfService = TicketPdfService();
+  bool _isDownloading = false;
 
   // Whether the ROOT booking of this reservation (this booking itself if
   // it has no linkedBookingId, or whatever it's linked to otherwise) is
@@ -84,6 +87,46 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
   }
 
   bool get _canEdit => booking.status == 'pending';
+
+  // PDF download is only available once the booking is approved - not
+  // while pending (nothing confirmed yet) and not if rejected (no valid
+  // ticket to present).
+  bool get _canDownload => booking.status == 'approved';
+
+  Future<void> _downloadPdf() async {
+    setState(() => _isDownloading = true);
+
+    try {
+      // Pull in the whole reservation (root + every linked addon), so a
+      // multi-seat booking (e.g. original seat 3 plus added seats 7, 9)
+      // gets one PDF with a separate page per seat, not just the seat(s)
+      // on this specific document.
+      final related = await _bookingService.getRelatedBookings(booking);
+      final result = await _pdfService.generateAndSave(related);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.success ? Colors.green : Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download ticket: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
 
   // Adding more seats requires ALL of: this specific booking still being
   // pending, the reservation's root booking still being pending (see
@@ -163,6 +206,18 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
                   builder: (_) => AddExtraSeatsDialog(booking: booking),
                 );
               },
+            ),
+          if (_canDownload)
+            IconButton(
+              icon: _isDownloading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download, size: 20),
+              tooltip: 'Download ticket as PDF',
+              onPressed: _isDownloading ? null : _downloadPdf,
             ),
         ],
       ),
@@ -283,6 +338,18 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
                   ? 'REFUND PENDING'
                   : booking.status.toUpperCase(),
             ),
+
+            if (_canDownload) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              Center(
+                child: Text(
+                  'Tap the download icon above to save your ticket as a PDF.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ),
+            ],
 
             if (booking.status == 'refund_pending' ||
                 booking.status == 'refunded') ...[
