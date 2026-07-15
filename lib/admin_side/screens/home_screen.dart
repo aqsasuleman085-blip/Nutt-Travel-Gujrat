@@ -4,6 +4,7 @@ import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/admin_side/screens/notification/notification_screen.dart';
 import 'package:nutt/admin_side/screens/broadcast/send_broadcast_screen.dart';
 import 'package:nutt/admin_side/screens/support/support_inbox_screen.dart';
+import 'package:nutt/user/services/support_ticket_service.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_constants.dart';
@@ -75,6 +76,8 @@ class DashboardTab extends StatefulWidget {
 }
 
 class _DashboardTabState extends State<DashboardTab> {
+  final SupportTicketService _supportTicketService = SupportTicketService();
+
   @override
   void initState() {
     super.initState();
@@ -105,14 +108,43 @@ class _DashboardTabState extends State<DashboardTab> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.forum),
-            tooltip: 'Support Inbox',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const SupportInboxScreen(),
+          StreamBuilder<int>(
+            stream: _supportTicketService.streamUnreadCountForAdmin(),
+            builder: (context, snapshot) {
+              final unreadTicketCount = snapshot.data ?? 0;
+              return IconButton(
+                icon: Stack(
+                  children: [
+                    const Icon(Icons.forum),
+                    if (unreadTicketCount > 0)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: CircleAvatar(
+                          radius: 8,
+                          backgroundColor: Colors.red,
+                          child: Text(
+                            unreadTicketCount > 9
+                                ? '9+'
+                                : unreadTicketCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
+                tooltip: 'Support Inbox',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SupportInboxScreen(),
+                    ),
+                  );
+                },
               );
             },
           ),

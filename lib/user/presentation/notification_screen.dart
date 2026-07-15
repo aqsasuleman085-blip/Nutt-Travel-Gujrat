@@ -16,20 +16,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       UserNotificationService();
 
   late String uid;
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     uid = FirebaseAuth.instance.currentUser!.uid;
-    _markAllAsRead();
-  }
-
-  Future<void> _markAllAsRead() async {
-    await _notificationService.markAllAsRead(uid);
-    if (mounted) {
-      setState(() {});
-    }
+    // Notifications are marked read individually when the user taps them
+    // (see the onTap handler below) - NOT all at once just from opening
+    // this screen, so unread/read status stays accurate per notification.
   }
 
   Future<void> _deleteNotification(String key) async {

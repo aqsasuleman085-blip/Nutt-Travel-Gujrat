@@ -64,10 +64,29 @@ class SupportTicket {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Timestamp of the last time an admin opened this ticket's thread.
+  /// Null if no admin has ever viewed it. Used to compute whether this
+  /// ticket counts toward the admin's unread badge: a ticket is unread
+  /// when its last message is from the user AND that message arrived
+  /// after adminLastSeenAt (or no admin has seen it yet).
+  final DateTime? adminLastSeenAt;
+
   /// True once at least one admin reply exists - used only to show a
   /// "Replied" badge; there is no closing/resolving step, the user can
   /// always send another follow-up.
   bool get hasReply => messages.any((m) => m.isFromAdmin);
+
+  /// True when the most recent message is from the user (i.e. admin
+  /// hasn't replied to it yet) AND the admin hasn't viewed the thread
+  /// since that message arrived. This is what drives the red badge count
+  /// on the admin Support Inbox icon.
+  bool get isUnreadByAdmin {
+    if (messages.isEmpty) return false;
+    final last = messages.last;
+    if (last.isFromAdmin) return false;
+    if (adminLastSeenAt == null) return true;
+    return last.sentAt.isAfter(adminLastSeenAt!);
+  }
 
   SupportTicket({
     required this.id,
@@ -79,6 +98,7 @@ class SupportTicket {
     required this.messages,
     DateTime? createdAt,
     DateTime? updatedAt,
+    this.adminLastSeenAt,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
@@ -93,6 +113,7 @@ class SupportTicket {
       'messages': messages.map((m) => m.toMap()).toList(),
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
+      'adminLastSeenAt': adminLastSeenAt?.millisecondsSinceEpoch,
     };
   }
 
@@ -121,6 +142,9 @@ class SupportTicket {
       updatedAt: map['updatedAt'] is int
           ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
           : DateTime.now(),
+      adminLastSeenAt: map['adminLastSeenAt'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(map['adminLastSeenAt'])
+          : null,
     );
   }
 }

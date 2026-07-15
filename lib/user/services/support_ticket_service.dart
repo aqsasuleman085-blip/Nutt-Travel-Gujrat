@@ -136,6 +136,26 @@ class SupportTicketService {
             .toList());
   }
 
+  /// Streams the count of tickets currently unread by the admin - i.e.
+  /// tickets whose latest message is from a user and hasn't been viewed
+  /// yet. Drives the red badge on the Support Inbox icon.
+  Stream<int> streamUnreadCountForAdmin() {
+    return streamAllTickets().map(
+      (tickets) => tickets.where((t) => t.isUnreadByAdmin).length,
+    );
+  }
+
+  /// Marks a ticket as seen by the admin (records the current time), which
+  /// clears it from the unread badge count. Called when the admin opens a
+  /// ticket's thread. If the user sends a further follow-up afterwards,
+  /// the ticket naturally becomes unread again since its latest message
+  /// will be newer than this timestamp.
+  Future<void> markSeenByAdmin(String ticketId) async {
+    await _collection.doc(ticketId).update({
+      'adminLastSeenAt': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
   /// Admin reply to a ticket - appends the message and notifies the user
   /// via their existing notification bell.
   Future<void> addAdminReply({

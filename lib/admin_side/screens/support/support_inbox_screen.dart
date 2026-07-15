@@ -57,8 +57,7 @@ class SupportInboxScreen extends StatelessWidget {
               final ticket = tickets[index];
               final lastMessage =
                   ticket.messages.isNotEmpty ? ticket.messages.last : null;
-              final awaitingAdmin =
-                  lastMessage != null && !lastMessage.isFromAdmin;
+              final awaitingAdmin = ticket.isUnreadByAdmin;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -160,6 +159,15 @@ class _AdminTicketThreadScreenState extends State<AdminTicketThreadScreen> {
   final _replyController = TextEditingController();
   final _service = SupportTicketService();
   bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Clears this ticket from the admin's unread badge count the moment
+    // the thread is opened - matches the "mark seen on open" behavior
+    // requested, independent of whether the admin actually replies.
+    _service.markSeenByAdmin(widget.ticket.id);
+  }
 
   @override
   void dispose() {
