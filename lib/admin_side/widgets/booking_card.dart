@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nutt/admin_side/core/constants/app_constants.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
 
 class BookingCard extends StatelessWidget {
@@ -48,11 +49,44 @@ class BookingCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    booking.userName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppConstants.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: AppConstants.primaryColor.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Text(
+                            booking.bookingNumber.isNotEmpty
+                                ? booking.bookingNumber
+                                : '#${booking.id.substring(0, 5).toUpperCase()}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppConstants.primaryColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            booking.userName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(

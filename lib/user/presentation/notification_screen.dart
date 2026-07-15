@@ -62,7 +62,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  IconData _getIconForType(String type, String title) {
+  // Admin "Broadcast Notification" category -> icon/color. Broadcasts are
+  // written with an explicit `category` field (info/warning/critical/
+  // cancellation) and `isBroadcast: true`, so they're checked first and
+  // fall through to the existing booking-notification logic below when
+  // absent - existing booking/refund notifications are unaffected.
+  IconData? _getBroadcastIcon(String category) {
+    switch (category) {
+      case 'warning':
+        return Icons.warning_amber_rounded;
+      case 'critical':
+        return Icons.report_problem_rounded;
+      case 'cancellation':
+        return Icons.cancel_rounded;
+      case 'info':
+        return Icons.campaign_rounded;
+      default:
+        return null;
+    }
+  }
+
+  Color? _getBroadcastColor(String category) {
+    switch (category) {
+      case 'warning':
+        return Colors.orange;
+      case 'critical':
+        return Colors.red;
+      case 'cancellation':
+        return Colors.red.shade900;
+      case 'info':
+        return Colors.blue;
+      default:
+        return null;
+    }
+  }
+
+  IconData _getIconForType(String type, String title, {String category = ''}) {
+    final broadcastIcon = _getBroadcastIcon(category);
+    if (broadcastIcon != null) return broadcastIcon;
+
     if (title.contains('Refund') || type.contains('refund')) {
       return Icons.abc_rounded;
     } else if (title.contains('Approved') || type.contains('approved')) {
@@ -76,7 +114,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Color _getIconColor(String type, String title) {
+  Color _getIconColor(String type, String title, {String category = ''}) {
+    final broadcastColor = _getBroadcastColor(category);
+    if (broadcastColor != null) return broadcastColor;
+
     if (title.contains('Refund') &&
         (title.contains('Processed') || title.contains('Approved'))) {
       return Colors.green;
@@ -247,9 +288,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               final createdAt = item["createdAt"];
               final type = item["type"] ?? "";
               final bookingId = item["bookingId"] ?? "";
+              final category = item["category"] ?? "";
+              final isBroadcast = item["isBroadcast"] == true;
 
-              final icon = _getIconForType(type, title);
-              final iconColor = _getIconColor(type, title);
+              final icon = _getIconForType(type, title, category: category);
+              final iconColor = _getIconColor(type, title, category: category);
 
               return Dismissible(
                 key: Key(key.toString()),
@@ -348,6 +391,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ),
                                 ],
                               ),
+                              if (isBroadcast) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'ANNOUNCEMENT',
+                                    style: TextStyle(
+                                      color: iconColor,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 8),
                               Text(
                                 message,

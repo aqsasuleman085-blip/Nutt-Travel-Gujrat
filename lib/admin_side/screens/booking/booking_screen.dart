@@ -54,9 +54,11 @@ class _BookingScreenState extends State<BookingScreen>
         final name = b.userName.toLowerCase();
         final cnic = b.cnic.toLowerCase();
         final phone = b.phone.toLowerCase();
+        final bookingNumber = b.bookingNumber.toLowerCase();
         return name.contains(_searchQuery) ||
             cnic.contains(_searchQuery) ||
-            phone.contains(_searchQuery);
+            phone.contains(_searchQuery) ||
+            bookingNumber.contains(_searchQuery);
       }).toList();
     }
 
@@ -468,7 +470,7 @@ class _BookingScreenState extends State<BookingScreen>
                     child: TextField(
                       controller: _searchController,
                       decoration: const InputDecoration(
-                        hintText: 'Search by name, CNIC, or phone',
+                        hintText: 'Search by name, CNIC, phone, or booking ID',
                         hintStyle: TextStyle(fontSize: 13),
                         border: InputBorder.none,
                         isDense: true,
@@ -715,6 +717,12 @@ class _BookingScreenState extends State<BookingScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _row(
+                "Booking ID",
+                booking.bookingNumber.isNotEmpty
+                    ? booking.bookingNumber
+                    : '#${booking.id.substring(0, 5).toUpperCase()}',
+              ),
               _row("Passenger", booking.userName),
               _row("Phone", booking.phone),
               _row("CNIC", booking.cnic),

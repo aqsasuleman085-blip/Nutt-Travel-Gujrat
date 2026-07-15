@@ -52,6 +52,17 @@ class BookingModel {
   // two can be traced back to each other. Empty for normal bookings.
   final String linkedBookingId;
 
+  // HUMAN-FRIENDLY BOOKING NUMBER: a short sequential display ID like
+  // "NT-0001", generated once when the booking is created. This is
+  // SEPARATE from the Firestore document `id` (which stays the normal
+  // auto-generated string and is what every internal reference -
+  // linkedBookingId, seat locks, notifications, refund requests - still
+  // uses under the hood). bookingNumber exists purely so staff can read,
+  // say, and search for a booking without dealing with a long random
+  // string. An addon booking (created via Add More Seats) reuses its
+  // root's bookingNumber, since both are part of the same reservation.
+  final String bookingNumber;
+
   // ONE-TIME USE FLAG: set to true on the ROOT booking the moment it is
   // used to create an "Add More Seats" addon, and never reset back to
   // false. Once true, "Add More Seats" is permanently disabled for this
@@ -96,6 +107,7 @@ class BookingModel {
     this.userRating = 0,
     this.userRatingComment = '',
     this.linkedBookingId = '',
+    this.bookingNumber = '',
     this.hasUsedAddSeats = false,
     DateTime? bookingDate,
     DateTime? createdAt,
@@ -146,6 +158,7 @@ class BookingModel {
       'userRatingComment': userRatingComment,
       // Linked booking (addon seats)
       'linkedBookingId': linkedBookingId,
+      'bookingNumber': bookingNumber,
       'hasUsedAddSeats': hasUsedAddSeats,
     };
   }
@@ -195,6 +208,7 @@ class BookingModel {
           : 0,
       userRatingComment: map['userRatingComment'] ?? '',
       linkedBookingId: map['linkedBookingId'] ?? '',
+      bookingNumber: map['bookingNumber'] ?? '',
       hasUsedAddSeats: map['hasUsedAddSeats'] == true,
       bookingDate: _toDateTime(map['createdAt'] ?? map['bookingDate']),
       createdAt: _toDateTime(map['createdAt'], fallbackToNow: true),

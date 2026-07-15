@@ -8,6 +8,33 @@ class BookingService {
   final FirebaseDatabase _realtimeDb = FirebaseDatabase.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  /// ✅ Generates the next human-friendly booking number, e.g. "NT-0001",
+  /// "NT-0002", ... This is completely separate from the Firestore
+  /// document ID (which stays the normal auto-generated string used
+  /// internally everywhere else) - it exists purely so staff have a
+  /// short, readable, sequential ID to say/search/write down instead of
+  /// a long random string, and so two customers with the same name are
+  /// trivial to tell apart.
+  ///
+  /// Uses a Firestore transaction on a single counter document
+  /// (`counters/bookingNumber`) so concurrent bookings from different
+  /// users at the same moment can never end up with the same number -
+  /// the transaction guarantees each caller gets a unique, incrementing
+  /// value even under a race.
+  Future<String> _generateNextBookingNumber() async {
+    final counterRef = _firestore.collection('counters').doc('bookingNumber');
+
+    final nextValue = await _firestore.runTransaction<int>((transaction) async {
+      final snapshot = await transaction.get(counterRef);
+      final current = (snapshot.data()?['value'] as num?)?.toInt() ?? 0;
+      final next = current + 1;
+      transaction.set(counterRef, {'value': next});
+      return next;
+    });
+
+    return 'NT-${nextValue.toString().padLeft(4, '0')}';
+  }
+
   /// ✅ UNIFIED REFUND METHOD - Always sets status to 'refund_pending' first
   ///
   /// [passengerName], [refundAccountName], [refundAccountNumber], and [refundReason]
@@ -401,9 +428,11 @@ class BookingService {
     }
 
     final docRef = _firestore.collection('bookings').doc();
+    final bookingNumber = await _generateNextBookingNumber();
     final bookingData = {
       'bookingId': docRef.id,
       'id': docRef.id,
+      'bookingNumber': bookingNumber,
       'userId': user.uid,
       'userName': name,
       'userEmail': user.email ?? '',
@@ -761,6 +790,10 @@ class BookingService {
     final bookingData = {
       'bookingId': docRef.id,
       'id': docRef.id,
+      // Reuse the ROOT's booking number - an addon is part of the same
+      // reservation, not a separate one, so it should read as the same
+      // NT-XXXX to staff searching for it.
+      'bookingNumber': rootBooking.bookingNumber,
       'userId': user.uid,
       'userName': originalBooking.userName,
       'userEmail': user.email ?? '',

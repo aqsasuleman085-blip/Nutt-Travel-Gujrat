@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/admin_side/screens/notification/notification_screen.dart';
+import 'package:nutt/admin_side/screens/broadcast/send_broadcast_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_constants.dart';
@@ -92,6 +93,17 @@ class _DashboardTabState extends State<DashboardTab> {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.campaign),
+            tooltip: 'Broadcast Notification',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SendBroadcastScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Stack(
               children: [

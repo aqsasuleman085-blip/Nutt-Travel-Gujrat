@@ -5,6 +5,7 @@ import 'package:nutt/admin_side/providers/auth_provider.dart';
 import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/providers/bus_provider.dart';
 import 'package:nutt/admin_side/providers/dashboard_provider.dart';
+import 'package:nutt/admin_side/providers/broadcast_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/admin_side/providers/theme_provider.dart';
 import 'package:nutt/firebase_options.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => BroadcastProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {

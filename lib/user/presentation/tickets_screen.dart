@@ -379,7 +379,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Ticket ${booking.id.substring(0, 6).toUpperCase()}',
+                        booking.bookingNumber.isNotEmpty
+                            ? booking.bookingNumber
+                            : 'Ticket ${booking.id.substring(0, 6).toUpperCase()}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
