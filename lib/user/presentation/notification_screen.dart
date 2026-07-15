@@ -22,12 +22,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     uid = FirebaseAuth.instance.currentUser!.uid;
-    // ❌ REMOVED: _markAllAsRead() - Don't auto-mark as read
-    // Just set loading to false
-    _isLoading = false;
+    _markAllAsRead();
   }
 
-  // ❌ REMOVED: _markAllAsRead() method - No longer needed
+  Future<void> _markAllAsRead() async {
+    await _notificationService.markAllAsRead(uid);
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> _deleteNotification(String key) async {
     await _notificationService.deleteNotification(uid, key);
@@ -94,7 +97,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  IconData _getIconForType(String type, String title, {String category = ''}) {
+  IconData _getIconForType(
+    String type,
+    String title, {
+    String category = '',
+    bool isSupportReply = false,
+  }) {
+    if (isSupportReply) return Icons.forum_rounded;
+
     final broadcastIcon = _getBroadcastIcon(category);
     if (broadcastIcon != null) return broadcastIcon;
 
@@ -111,7 +121,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Color _getIconColor(String type, String title, {String category = ''}) {
+  Color _getIconColor(
+    String type,
+    String title, {
+    String category = '',
+    bool isSupportReply = false,
+  }) {
+    if (isSupportReply) return themeColor;
+
     final broadcastColor = _getBroadcastColor(category);
     if (broadcastColor != null) return broadcastColor;
 
@@ -287,9 +304,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               final bookingId = item["bookingId"] ?? "";
               final category = item["category"] ?? "";
               final isBroadcast = item["isBroadcast"] == true;
+              final isSupportReply = item["isSupportReply"] == true;
 
-              final icon = _getIconForType(type, title, category: category);
-              final iconColor = _getIconColor(type, title, category: category);
+              final icon = _getIconForType(type, title,
+                  category: category, isSupportReply: isSupportReply);
+              final iconColor = _getIconColor(type, title,
+                  category: category, isSupportReply: isSupportReply);
 
               return Dismissible(
                 key: Key(key.toString()),
@@ -313,7 +333,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 },
                 child: GestureDetector(
                   onTap: () async {
-                    // ✅ Only mark as read when user taps on notification
                     if (!isRead) {
                       await _notificationService.markAsRead(
                         uid,
@@ -326,23 +345,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     // Optional: Navigate based on notification type
                     if (bookingId.isNotEmpty) {
                       // Navigate to booking details if needed
-                      // Example: Navigator.push(context, MaterialPageRoute(builder: (_) => BookingDetailsScreen(bookingId: bookingId)));
                     }
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      // ✅ Keep visual distinction for unread notifications
                       color: isRead
                           ? Colors.white
-                          : themeColor.withOpacity(0.08),
+                          : themeColor.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isRead
                             ? Colors.grey.shade200
-                            : themeColor.withOpacity(0.4),
-                        width: isRead ? 1 : 2,
+                            : themeColor.withOpacity(0.3),
                       ),
                       boxShadow: const [
                         BoxShadow(
@@ -371,7 +387,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     child: Text(
                                       title,
                                       style: TextStyle(
-                                        // ✅ Bold for unread, normal for read
                                         fontWeight: isRead
                                             ? FontWeight.w500
                                             : FontWeight.bold,
@@ -382,7 +397,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       ),
                                     ),
                                   ),
-                                  // ✅ Show unread indicator dot for unread notifications
                                   if (!isRead)
                                     Container(
                                       width: 10,
@@ -416,6 +430,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   ),
                                 ),
                               ],
+                              if (isSupportReply) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.forum_rounded, size: 11, color: iconColor),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'SUPPORT REPLY',
+                                        style: TextStyle(
+                                          color: iconColor,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 8),
                               Text(
                                 message,
@@ -441,27 +484,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       fontSize: 11,
                                     ),
                                   ),
-                                  if (!isRead) ...[
-                                    const SizedBox(width: 12),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: themeColor.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'NEW',
-                                        style: TextStyle(
-                                          color: themeColor,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ],

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
+import 'package:barcode_widget/barcode_widget.dart';
 
 import '../../services/booking_service.dart';
 import 'add_extra_seats_dialog.dart';
 import 'edit_passenger_dialog.dart';
 import 'ticket_pdf_service.dart';
+import 'ticket_qr_data.dart';
 
 /// Read-only ticket details dialog. The edit icon (shown only when status
 /// == 'pending') opens EditPassengerDialog; the seat icon opens
@@ -42,11 +44,14 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
 
   bool _loadingRootStatus = true;
 
+  late final String _qrData;
+
   BookingModel get booking => widget.booking;
 
   @override
   void initState() {
     super.initState();
+    _qrData = buildTicketQrData(booking, seat: booking.seatNumber);
     _loadRootStatus();
   }
 
@@ -342,11 +347,49 @@ class _TicketDetailsDialogState extends State<TicketDetailsDialog> {
             if (_canDownload) ...[
               const SizedBox(height: 16),
               const Divider(),
+              const Text(
+                'TICKET QR CODE',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: BarcodeWidget(
+                    barcode: Barcode.qrCode(
+                      errorCorrectLevel: BarcodeQRCorrectionLevel.high,
+                    ),
+                    data: _qrData,
+                    width: 150,
+                    height: 150,
+                    drawText: false,
+                    errorBuilder: (context, error) => const SizedBox(
+                      width: 150,
+                      height: 150,
+                      child: Center(
+                        child: Text(
+                          'QR code unavailable',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
               Center(
                 child: Text(
-                  'Tap the download icon above to save your ticket as a PDF.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  'Scan to verify this ticket',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
               ),
             ],

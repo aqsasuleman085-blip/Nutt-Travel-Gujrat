@@ -3,6 +3,7 @@ import 'package:nutt/admin_side/providers/booking_provider.dart';
 import 'package:nutt/admin_side/providers/notification_provider.dart';
 import 'package:nutt/admin_side/screens/notification/notification_screen.dart';
 import 'package:nutt/admin_side/screens/broadcast/send_broadcast_screen.dart';
+import 'package:nutt/admin_side/screens/support/support_inbox_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_constants.dart';
@@ -100,6 +101,17 @@ class _DashboardTabState extends State<DashboardTab> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const SendBroadcastScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.forum),
+            tooltip: 'Support Inbox',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SupportInboxScreen(),
                 ),
               );
             },

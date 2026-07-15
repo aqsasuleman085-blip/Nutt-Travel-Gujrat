@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// 🔹 HELP & SUPPORT SCREEN
 ///
 /// Shows an expandable FAQ list covering the most common questions a bus
 /// ticket passenger would have (booking, seat selection, payment, refund,
-/// cancellation), followed by quick contact options (Call / WhatsApp /
-/// Email) at the bottom for anything the FAQ doesn't cover.
+/// cancellation).
+///
+/// Contact details (Call / WhatsApp / Email / Office Address) live on the
+/// separate Contact Us screen, and asking a support question directly is
+/// available via the chat icon on the Home screen - both are intentionally
+/// not duplicated here.
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
 
   static const Color themeColor = Color(0xff10B981);
-
-  // Update these to your real support contact details.
-  static const String supportPhone = "+92 300 1234567";
-  static const String supportWhatsApp = "+923001234567"; // no spaces, with country code
-  static const String supportEmail = "support@nutttravel.com";
 
   static const List<_FaqItem> _faqs = [
     _FaqItem(
@@ -68,10 +66,10 @@ class HelpSupportScreen extends StatelessWidget {
       question: "I made a mistake in my booking. What should I do?",
       answer:
           "If your ticket hasn't been approved yet, contact support "
-          "immediately using the options below so we can help before it's "
-          "processed. If it's already approved, you can request a refund "
-          "(subject to the 12-hour policy) and create a new booking with "
-          "the correct details.",
+          "immediately using the chat icon on the Home screen so we can "
+          "help before it's processed. If it's already approved, you can "
+          "request a refund (subject to the 12-hour policy) and create a "
+          "new booking with the correct details.",
     ),
     _FaqItem(
       question: "How do I update my profile information?",
@@ -81,25 +79,6 @@ class HelpSupportScreen extends StatelessWidget {
           "credentials.",
     ),
   ];
-
-  Future<void> _launchPhone() async {
-    final uri = Uri(scheme: 'tel', path: supportPhone.replaceAll(' ', ''));
-    await launchUrl(uri);
-  }
-
-  Future<void> _launchWhatsApp() async {
-    final uri = Uri.parse('https://wa.me/$supportWhatsApp');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-
-  Future<void> _launchEmail() async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: supportEmail,
-      query: 'subject=Support Request - Nutt Travel',
-    );
-    await launchUrl(uri);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +119,7 @@ class HelpSupportScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        "Browse frequently asked questions below, or "
-                        "reach out to us directly.",
+                        "Browse frequently asked questions below.",
                         style: TextStyle(fontSize: 13, color: Colors.black54),
                       ),
                     ],
@@ -221,50 +199,6 @@ class HelpSupportScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 28),
-
-          const Text(
-            "STILL NEED HELP?",
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-              letterSpacing: 0.4,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              Expanded(
-                child: _QuickContactButton(
-                  icon: Icons.call,
-                  label: "Call",
-                  color: themeColor,
-                  onTap: _launchPhone,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _QuickContactButton(
-                  icon: Icons.chat,
-                  label: "WhatsApp",
-                  color: const Color(0xff25D366),
-                  onTap: _launchWhatsApp,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _QuickContactButton(
-                  icon: Icons.email,
-                  label: "Email",
-                  color: Colors.blueGrey,
-                  onTap: _launchEmail,
-                ),
-              ),
-            ],
-          ),
-
           const SizedBox(height: 40),
         ],
       ),
@@ -277,47 +211,4 @@ class _FaqItem {
   final String answer;
 
   const _FaqItem({required this.question, required this.answer});
-}
-
-class _QuickContactButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickContactButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

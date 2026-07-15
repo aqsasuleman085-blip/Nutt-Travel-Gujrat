@@ -45,7 +45,7 @@ dependencies:
   firebase_database: ^10.5.7
   url_launcher: ^6.3.1   # ✅ added for Help & Support / Contact Us tap-to-call, email, WhatsApp links
   fl_chart: ^0.68.0      # ✅ added for admin dashboard mini-charts and detail screen charts
-  qr_flutter: ^4.1.0     # ✅ added for ticket QR code
+  barcode_widget: ^2.0.4 # ✅ added for reliable in-app + PDF QR display (same engine used by the pdf package)
   pdf: ^3.11.1           # ✅ added for generating downloadable ticket PDFs
   path_provider: ^2.1.4  # ✅ added to locate device storage for saving the PDF
   permission_handler: ^11.3.1  # ✅ added to request storage permission on Android
