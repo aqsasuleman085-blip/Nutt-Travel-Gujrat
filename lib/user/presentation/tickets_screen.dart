@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nutt/admin_side/models/booking_model.dart';
 import '../../services/booking_service.dart';
 import 'refund_request_form.dart';
-import 'trip_rating_widget.dart';
 import 'ticket_details_dialog.dart';
 
 class TicketsScreen extends StatefulWidget {
@@ -245,7 +244,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
@@ -476,246 +474,242 @@ class _TicketsScreenState extends State<TicketsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-              Text(
-                '${booking.busFrom} → ${booking.busTo}',
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
                   Text(
-                    "Date: $displayDate",
-                    style: const TextStyle(fontSize: 13),
+                    '${booking.busFrom} → ${booking.busTo}',
+                    style: const TextStyle(fontSize: 14),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Seat: ${entry.combinedSeatLabel}",
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                  Text(
-                    "Rs ${entry.combinedTotalAmount.toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              if (entry.extras.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '+${entry.extras.length} extra seat${entry.extras.length == 1 ? '' : 's'} added',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: themeColor,
-                    ),
-                  ),
-                ),
-              ],
-
-              // Show refund reason preview if available
-              if (booking.refundReason.isNotEmpty &&
-                  (isRefundPending || isRefunded)) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Row(
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        isRefundPending
-                            ? Icons.pending_actions
-                            : Icons.check_circle,
-                        size: 16,
-                        color: statusColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Refund Reason: ${booking.refundReason}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              // Show rejection reason preview if applicable
-              if (booking.rejectionReason.isNotEmpty && isRejected) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.cancel, size: 16, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Rejection Reason: ${booking.rejectionReason}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.red,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 12),
-
-              /// Show appropriate badge or buttons based on status
-              if (isTerminalState) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isRefunded
-                            ? Icons.abc_rounded
-                            : isRefundPending
-                            ? Icons.pending
-                            : isRejected
-                            ? Icons.cancel
-                            : Icons.info_outline,
-                        size: 18,
-                        color: statusColor,
-                      ),
-                      const SizedBox(width: 8),
                       Text(
-                        statusText,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
+                        "Date: $displayDate",
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: statusColor.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ] else if (booking.status == 'approved' ||
-                  booking.status == 'pending') ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (showRefundButton)
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                        onPressed: () => _openRefundRequestForm(entry),
-                        child: const Text("Request Refund"),
-                      ),
-                    if (showRefundButton) const SizedBox(width: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                  const SizedBox(height: 5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          "Seat: ${entry.combinedSeatLabel}",
+                          style: const TextStyle(fontSize: 13),
                         ),
                       ),
-                      onPressed: isProcessing
-                          ? null
-                          : () => _showDetailsDialog(context, booking),
-                      child: const Text("View Details"),
+                      Text(
+                        "Rs ${entry.combinedTotalAmount.toStringAsFixed(0)}",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (entry.extras.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: themeColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '+${entry.extras.length} extra seat${entry.extras.length == 1 ? '' : 's'} added',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: themeColor,
+                        ),
+                      ),
                     ),
                   ],
-                ),
 
-                // Rate your trip - only shown for approved bookings.
-                if (booking.status == 'approved')
-                  TripRatingWidget(booking: booking, themeColor: themeColor),
-              ] else ...[
-                // Fallback: Show only view button for any other status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                  // Show refund reason preview if available
+                  if (booking.refundReason.isNotEmpty &&
+                      (isRefundPending || isRefunded)) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[200]!),
                       ),
-                      onPressed: isProcessing
-                          ? null
-                          : () => _showDetailsDialog(context, booking),
-                      child: const Text("View Details"),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isRefundPending
+                                ? Icons.pending_actions
+                                : Icons.check_circle,
+                            size: 16,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Refund Reason: ${booking.refundReason}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
-                ),
-              ],
+
+                  // Show rejection reason preview if applicable
+                  if (booking.rejectionReason.isNotEmpty && isRejected) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cancel, size: 16, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Rejection Reason: ${booking.rejectionReason}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  /// Show appropriate badge or buttons based on status
+                  if (isTerminalState) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isRefunded
+                                ? Icons.abc_rounded
+                                : isRefundPending
+                                ? Icons.pending
+                                : isRejected
+                                ? Icons.cancel
+                                : Icons.info_outline,
+                            size: 18,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            statusText,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (booking.status == 'approved' ||
+                      booking.status == 'pending') ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (showRefundButton)
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () => _openRefundRequestForm(entry),
+                            child: const Text("Request Refund"),
+                          ),
+                        if (showRefundButton) const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: themeColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                          onPressed: isProcessing
+                              ? null
+                              : () => _showDetailsDialog(context, booking),
+                          child: const Text("View Details"),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    // Fallback: Show only view button for any other status
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: themeColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                          onPressed: isProcessing
+                              ? null
+                              : () => _showDetailsDialog(context, booking),
+                          child: const Text("View Details"),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
